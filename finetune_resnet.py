@@ -87,7 +87,8 @@ if __name__ == '__main__':
     optimizer = get_optimizer(args, model.parameters())
     criterion = nn.BCEWithLogitsLoss()
     wandb.init(
-        project='Resnet50 on Waterbirds'
+        project='Resnet50 on Waterbirds',
+        config=vars(args),
     )
     train_model(
         args=args,
