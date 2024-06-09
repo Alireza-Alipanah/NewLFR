@@ -70,10 +70,7 @@ def train_model(
         for img, y, _, _ in train_dataloader:
             img, y = img.cuda(), y.cuda()
             optimizer.zero_grad()
-            outputs = model(img)
-            print('------------------------------------')
-            print(outputs.shape, y.shape)
-            print('------------------------------------')
+            outputs = model(img).squeeze()
             loss = criterion(outputs, y)
             loss.backward()
             optimizer.step()
