@@ -68,7 +68,7 @@ def train_model(
         model.train()
         running_loss = 0
         for img, y, _, _ in train_dataloader:
-            img, y = img.cuda(), y.cuda()
+            img, y = img.cuda(), y.float().cuda()
             optimizer.zero_grad()
             outputs = model(img).squeeze()
             loss = criterion(outputs, y)
