@@ -7,9 +7,8 @@ import torch.nn as nn
 from torch.optim import SGD
 import wandb
 import tqdm
-from sklearn.metrics import accuracy_score
 
-from utils import load_data
+from utils import load_data, train_model, test_model
 
 
 if not torch.cuda.is_available():
@@ -57,42 +56,6 @@ def get_optimizer(args, params):
     return optimizer
 
 
-def train_model(
-    args,
-    train_dataloader,
-    val_dataloader,
-    test_dataloader,
-    model,
-    optimizer,
-    criterion
-):
-    y = torch.rand((0))
-    for _, batch_y, _, _ in train_dataloader:
-        y = torch.concat((y, batch_y))
-    model = model.cuda()
-    for epoch in tqdm.tqdm(range(args.epochs)):
-        model.train()
-        running_loss = 0
-        outputs = torch.rand((0))
-        for img, batch_y, _, _ in train_dataloader:
-            img, batch_y = img.cuda(), batch_y.float().cuda()
-            optimizer.zero_grad()
-            batch_outputs = model(img).squeeze()
-            loss = criterion(batch_outputs, batch_y)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
-            wandb.log({'train/step_loss': loss.item()})
-            outputs = torch.concat((outputs, batch_outputs.cpu()))
-        running_loss /= len(train_dataloader)
-        acc = accuracy_score(y.cpu(), outputs.cpu())
-        wandb.log({
-            'epoch': epoch,
-            'train/avg_loss': running_loss,
-            'train/epoch_accuracy': acc
-            })
-
-
 
 if __name__ == '__main__':
     train_dataloader, val_dataloader, test_dataloader = get_data(args)
@@ -107,10 +70,13 @@ if __name__ == '__main__':
         args=args,
         train_dataloader=test_dataloader,
         val_dataloader=val_dataloader,
-        test_dataloader=test_dataloader,
         model=model,
         optimizer=optimizer,
         criterion=criterion
+    )
+    test_model(
+        test_dataloader=test_dataloader,
+        model=model
     )
     model_state = model.state_dict()
     os.makedirs(args.save_path, exist_ok=True)
