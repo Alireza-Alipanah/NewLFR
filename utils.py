@@ -86,7 +86,7 @@ def train_model(
         log_to_wandb(
             'train',
             {
-                'train/avg_loss': running_loss,
+                'avg_loss': running_loss,
                 **group_data
             },
             epoch=epoch
