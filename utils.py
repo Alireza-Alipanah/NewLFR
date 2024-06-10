@@ -86,7 +86,8 @@ def train_model(
     model,
     optimizer,
     criterion,
-    classification_func
+    classification_func,
+    group_proportions
 ):
     for epoch in tqdm(range(args.epochs)):
         model.train()
@@ -113,7 +114,17 @@ def train_model(
         )
 
 
-def calculate_group_accuracies(pred, y, groups):
+def get_train_group_proportions(array):
+    flattened_arr = array.flatten()
+    value_counts = np.bincount(flattened_arr)
+    total_count = np.sum(value_counts)
+    proportions = value_counts / total_count
+    unique_values = np.nonzero(value_counts)[0]
+    proportions_dict = dict(zip(unique_values, proportions[unique_values]))
+    return proportions_dict
+
+
+def calculate_group_accuracies(pred, y, groups, proportions_dict):
     group_data = dict()
     worst_group_acc = float('inf')
     mean_acc = 0
@@ -123,7 +134,7 @@ def calculate_group_accuracies(pred, y, groups):
         group_accuracy = accuracy_score(group_y, group_pred)
         worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
-        mean_acc += group_accuracy * len(group_pred) / len(pred)
+        mean_acc += group_accuracy * proportions_dict[group] # calculated according to JTT paper
     group_data['worst_group_accuracy'] = worst_group_acc
     group_data['accuracy'] = accuracy_score(y, pred)
     group_data['mean_accuracy'] = mean_acc
@@ -133,7 +144,8 @@ def calculate_group_accuracies(pred, y, groups):
 def evaluate(
     dataloader,
     model,
-    classification_func
+    classification_func,
+    group_proportions
 ):
     model.eval()
     y = torch.rand((0))
@@ -150,11 +162,11 @@ def evaluate(
     pred = classification_func(outputs).numpy()
     y = y.cpu().int().numpy()
     groups = groups.cpu().numpy()
-    group_data = calculate_group_accuracies(pred, y, groups)
+    group_data = calculate_group_accuracies(pred, y, groups, group_proportions)
     return group_data
 
 
-def test_model(test_dataloader, model, classification_func, is_start=False):
+def test_model(test_dataloader, model, classification_func, group_proportions, is_start=False):
     group_data = evaluate(test_dataloader, model, classification_func)
     prefix = 'test_start' if is_start else 'test'
     log_to_wandb(prefix, group_data)

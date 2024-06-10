@@ -60,11 +60,13 @@ if __name__ == '__main__':
         project='Resnet50 on Waterbirds',
         config=vars(args),
     )
+    group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
     test_model(
         test_dataloader=test_dataloader,
         model=model,
         classification_func=classification_func,
-        is_start=True
+        is_start=True,
+        group_proportions=group_proportions
     )
     train_model(
         args=args,
@@ -73,12 +75,14 @@ if __name__ == '__main__':
         model=model,
         optimizer=optimizer,
         criterion=criterion,
-        classification_func=classification_func
+        classification_func=classification_func,
+        group_proportions=group_proportions
     )
     test_model(
         test_dataloader=test_dataloader,
         model=model,
-        classification_func=classification_func
+        classification_func=classification_func,
+        group_proportions=group_proportions
     )
     model_state = model.state_dict()
     os.makedirs(args.save_path, exist_ok=True)
