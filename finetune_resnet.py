@@ -94,6 +94,7 @@ def get_classification_func(args, sigmoid_threshold=0.5):
 
 
 if __name__ == '__main__':
+    print(args.use_softmax)
     train_dataloader, val_dataloader, test_dataloader = get_data(args)
     model = get_model(args, train_dataloader.dataset.n_classes)
     model = model.cuda()
