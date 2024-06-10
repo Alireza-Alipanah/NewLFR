@@ -1,5 +1,8 @@
 from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data
 
+from sklearn.metrics import accuracy_score
+import numpy as np
+
 
 def load_data(basedir, batch_size, target_resolution=(224, 224)):
     train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=True)
@@ -47,6 +50,87 @@ def load_data(basedir, batch_size, target_resolution=(224, 224)):
         batch_size=batch_size,
         )
     return train_dataloader, val_dataloader, test_dataloader
+
+
+def log_to_wandb(prefix, data_dict, epoch=None):
+    new_data = {f'{prefix}/{key}': value for key, value in data_dict.items()}
+    if epoch is not None:
+        new_data['epoch'] = epoch
+    wandb.log(new_data)
+
+
+def train_model(
+    args,
+    train_dataloader,
+    val_dataloader,
+    model,
+    optimizer,
+    criterion
+):
+    model = model.cuda()
+    for epoch in tqdm.tqdm(range(args.epochs)):
+        model.train()
+        running_loss = 0
+        for img, y, _, _ in train_dataloader:
+            img, y = img.cuda(), y.float().cuda()
+            optimizer.zero_grad()
+            outputs = model(img).squeeze()
+            loss = criterion(outputs, y)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+            wandb.log({'train/step_loss': loss.item()})
+        running_loss /= len(train_dataloader)
+        group_data = evaluate(train_dataloader, model)
+        log_to_wandb(
+            'train',
+            {
+                'train/avg_loss': running_loss,
+                **group_data
+            },
+            epoch=epoch
+        )
+
+
+def calculate_group_accuracies(outputs, y, groups):
+    group_data = dict()
+    worst_group_acc = float('inf')
+    for group in np.unique(groups):
+        group_outputs = outputs[groups == group]
+        group_y = y[groups == group]
+        group_accuracy = accuracy_score(group_y, group_outputs)
+        group_accuracy = min(group_accuracy, worst_group_acc)
+        group_data[f'group_{group}_accuracy'] = group_accuracy
+    group_data['worst_group_accyracy'] = worst_group_acc
+    return group_data
+
+
+def evaluate(
+    dataloader,
+    model
+):
+    model.eval()
+    y = torch.rand((0))
+    outputs = torch.rand((0))
+    groups = torch.rand((0))
+    with torch.no_grad():
+        for img, batch_y, g, _ in dataloader:
+            img = img.cuda()
+            batch_outputs = model(img).squeeze().cpu()
+            outputs = torch.concat((outputs, batch_outputs))
+            y = torch.concat((y, batch_y))
+            groups = torch.concat((groups, g))
+    outputs = outputs.cpu().numpy()
+    y = y.cpu().numpy()
+    groups = groups.cpu().numpy()
+    group_data = calculate_group_accuracies(outputs, y, groups)
+    return group_data
+
+
+def test_model(test_dataloader, model):
+    group_data = evaluate(test_dataloader, model)
+    log_to_wandb('test', group_data)
+
 
 
 if __name__ == '__main__':
