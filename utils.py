@@ -131,7 +131,7 @@ def evaluate(
     outputs = outputs.cpu().numpy()
     y = y.cpu().int().numpy()
     groups = groups.cpu().numpy()
-    group_data = calculate_group_accuracies(outputs, y, groups)
+    group_data = calculate_group_accuracies(outputs, y, groups, classification_func)
     return group_data
 
 
