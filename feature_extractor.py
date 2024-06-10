@@ -7,7 +7,7 @@ from torchvision.models import resnet50
 import pandas as pd
 import tqdm
 
-from utils import load_data
+from utils import load_data, load_model_from_state_dict
 
 
 if not torch.cuda.is_available():
@@ -26,36 +26,6 @@ def get_args():
     parser.add_argument('--embedding_size', default=2048, help='size of the embeddings', type=int)
     args = parser.parse_args()
     return args
-
-
-def print_weigth_match(loaded_state_dict, model):
-    loaded_keys = ['loaded'] + list(loaded_state_dict.keys())
-    model_keys = ['model'] + list(model.state_dict().keys())
-    
-    max_a = max(len(x) for x in loaded_keys)
-    max_b = max(len(y) for y in model_keys)
-    
-    if len(loaded_keys) > len(model_keys):
-        new_b = model_keys + [' '] * (len(loaded_keys)-len(model_keys))
-        for i in range(len(loaded_keys)):
-            print(f"{loaded_keys[i]:{max_a}}|{new_b[i]:{max_b}}")
-            if i == 0:
-                print('-' * len(f"{loaded_keys[i]:{max_a}}|{new_b[i]:{max_b}}"))
-    else:
-        new_a = loaded_keys + [' '] * (len(model_keys)-len(loaded_keys))
-        for j in range(len(model_keys)):
-            print(f"{new_a[j]:{max_a}}|{model_keys[j]:{max_b}}")
-            if j == 0:
-                print('-' * len(f"{new_a[j]:{max_a}}|{model_keys[j]:{max_b}}"))
-
-
-def load_model(args):
-    model = resnet50(weights=None)
-    state_dict = torch.load(args.model_path)
-    print_weigth_match(state_dict, model)
-    model.load_state_dict(state_dict, strict=False)
-    model.fc = nn.Identity()
-    return model
 
 
 def get_dataloaders(args):
@@ -117,7 +87,8 @@ def save_dataframe(args, df):
 
 if __name__ == '__main__':
     args = get_args()
-    model = load_model(args)
+    model = load_model_from_state_dict(args)
+    model.fc = nn.Identity()
     model.cuda()
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(args)
     embeddings, y, g, p, split = extract_embeddings(args, model, train_loader, val_loader, test_loader)

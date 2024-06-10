@@ -223,14 +223,30 @@ def get_classification_func(args, sigmoid_threshold=0.5):
         return lambda x: F.sigmoid(x.squeeze()) >= sigmoid_threshold
 
 
+def print_weigth_match(loaded_state_dict, model):
+    loaded_keys = ['loaded'] + list(loaded_state_dict.keys())
+    model_keys = ['model'] + list(model.state_dict().keys())
+    
+    max_a = max(len(x) for x in loaded_keys)
+    max_b = max(len(y) for y in model_keys)
+    
+    if len(loaded_keys) > len(model_keys):
+        new_b = model_keys + [' '] * (len(loaded_keys)-len(model_keys))
+        for i in range(len(loaded_keys)):
+            print(f"{loaded_keys[i]:{max_a}}|{new_b[i]:{max_b}}")
+            if i == 0:
+                print('-' * len(f"{loaded_keys[i]:{max_a}}|{new_b[i]:{max_b}}"))
+    else:
+        new_a = loaded_keys + [' '] * (len(model_keys)-len(loaded_keys))
+        for j in range(len(model_keys)):
+            print(f"{new_a[j]:{max_a}}|{model_keys[j]:{max_b}}")
+            if j == 0:
+                print('-' * len(f"{new_a[j]:{max_a}}|{model_keys[j]:{max_b}}"))
 
-if __name__ == '__main__':
-    # for testing only
-    train_dataloader, val_dataloader, test_dataloader = load_data('/kaggle/working/waterbird_complete95_forest2water2', batch_size=1)
-    print(f'len train:\t{len(train_dataloader)}')
-    print(f'len validation:\t{len(val_dataloader)}')
-    print(f'len test:\t{len(test_dataloader)}')
-    for img, y, g, p in train_dataloader:
-        print(img.shape, y.shape, g.shape, p.shape, sep='\t')
-        print(y, g, p, sep='\t')
-        exit()
+
+def load_model_from_state_dict(args):
+    model = resnet50(weights=None)
+    state_dict = torch.load(args.model_path)
+    print_weigth_match(state_dict, model)
+    model.load_state_dict(state_dict, strict=False)
+    return model
