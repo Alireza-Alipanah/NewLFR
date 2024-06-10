@@ -83,9 +83,9 @@ def train_model(
             optimizer.step()
             running_loss += loss.item()
             wandb.log({'train/step_loss': loss.item()})
-            outputs = torch.concat((outputs, batch_outputs))
+            outputs = torch.concat((outputs, batch_outputs.cpu()))
         running_loss /= len(train_dataloader)
-        acc = accuracy_score(y, outputs)
+        acc = accuracy_score(y.cpu(), outputs.cpu())
         wandb.log({
             'epoch': epoch,
             'train/avg_loss': running_loss,
