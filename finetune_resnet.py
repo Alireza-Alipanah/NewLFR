@@ -6,7 +6,6 @@ from torchvision.models import resnet50
 import torch.nn as nn
 from torch.optim import SGD
 import wandb
-import tqdm
 
 from utils import load_data, train_model, test_model
 
