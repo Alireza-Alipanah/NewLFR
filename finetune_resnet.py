@@ -27,7 +27,7 @@ parser.add_argument('--weights', default='ResNet50_Weights.IMAGENET1K_V1', help=
 parser.add_argument('--save_path', default=os.path.join('/', 'kaggle', 'working', 'NewLFR', 'saved_models'), help='path to save the model', type=str)
 parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
 parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
-parser.add_argument('--seed', default=None, help='seed', type=1)
+parser.add_argument('--seed', default=None, help='seed', type=int)
 args = parser.parse_args()
 
 
