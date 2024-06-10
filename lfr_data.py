@@ -9,8 +9,6 @@ class EmbeddingsDataset(Dataset):
             split_i = ["train", "val", "test"].index(split)
         except ValueError:
             raise(f"Unknown split {split}")
-        if idx is not None and split_num != -1:
-            raise Exception('idx and split_num cannot be set simultaneously')
         df = pd.read_csv(df_path)
         df = df[split == split_i]
         if split_num != -1:
@@ -31,25 +29,6 @@ class EmbeddingsDataset(Dataset):
         g = self.group[idx]
         p = self.place_label[idx]
         return embedding, y, g, p
-
-
-class SimpleEmbeddingsDataset(Dataset):
-    def __init__(self, embeddings, label, group, place_label):
-        self.embeddings = embeddings
-        self.label = label
-        self.group = group
-        self.place_label = place_label
-
-    def __len__(self):
-        return len(self.label)
-
-    def __getitem__(self, idx):
-        embedding = self.embeddings[idx]
-        y = self.label[idx]
-        g = self.group[idx]
-        p = self.place_label[idx]
-        return embedding, y, g, p
-
 
 
 def get_loader(data, shuffle, batch_size, **kwargs):
