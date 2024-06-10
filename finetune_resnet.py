@@ -53,6 +53,7 @@ def get_model(args, n_classes):
         print('-------------------------------------------------------------------')
         print(args.use_softmax, n_classes, out_features)
         print('-------------------------------------------------------------------')
+        exit()
         model.fc = nn.Linear(in_features=in_features, out_features=out_features)
     else:
         raise NotImplementedError()
