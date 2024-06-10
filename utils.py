@@ -68,7 +68,8 @@ def train_model(
     val_dataloader,
     model,
     optimizer,
-    criterion
+    criterion,
+    classification_func
 ):
     model = model.cuda()
     for epoch in tqdm.tqdm(range(args.epochs)):
@@ -84,7 +85,7 @@ def train_model(
             running_loss += loss.item()
             wandb.log({'train/step_loss': loss.item()})
         running_loss /= len(train_dataloader)
-        group_data = evaluate(train_dataloader, model)
+        group_data = evaluate(train_dataloader, model, classification_func)
         log_to_wandb(
             'train',
             {
@@ -95,24 +96,25 @@ def train_model(
         )
 
 
-def calculate_group_accuracies(outputs, y, groups, threshold=0.5):
+def calculate_group_accuracies(outputs, y, groups, classification_func):
     group_data = dict()
     worst_group_acc = float('inf')
     for group in np.unique(groups):
         group_outputs = outputs[groups == group]
-        group_pred = group_outputs >= threshold
+        group_pred = classification_func(group_outputs)
         group_y = y[groups == group]
         group_accuracy = accuracy_score(group_y, group_pred)
         worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
     group_data['worst_group_accuracy'] = worst_group_acc
-    group_data['accuracy'] = accuracy_score(y, outputs >= threshold)
+    group_data['accuracy'] = accuracy_score(y, classification_func(outputs))
     return group_data
 
 
 def evaluate(
     dataloader,
-    model
+    model,
+    classification_func
 ):
     model.eval()
     y = torch.rand((0))
@@ -132,9 +134,13 @@ def evaluate(
     return group_data
 
 
-def test_model(test_dataloader, model):
-    group_data = evaluate(test_dataloader, model)
+def test_model(test_dataloader, model, classification_func):
+    group_data = evaluate(test_dataloader, model, classification_func)
     log_to_wandb('test', group_data)
+    print(
+        'Test metrics:\n' + \
+        '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
+    )
 
 
 

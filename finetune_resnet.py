@@ -2,9 +2,10 @@ import argparse
 import os
 
 import torch
-from torchvision.models import resnet50, ResNet50_Weights
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.optim import SGD
+from torchvision.models import resnet50, ResNet50_Weights
 import wandb
 
 from utils import load_data, train_model, test_model
@@ -25,6 +26,7 @@ parser.add_argument('--model', default='ResNet50', help='model to train', type=s
 parser.add_argument('--weights', default='ResNet50_Weights.IMAGENET1K_V1', help='specify the weights to use for the pretrained model', type=str)
 parser.add_argument('--save_path', default=os.path.join('/', 'kaggle', 'working', 'NewLFR', 'saved_models'), help='path to save the model', type=str)
 parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
+parser.add_argument('--use_softmax', default=True, help='wether to use softmax or sigmoid', type=bool)
 args = parser.parse_args()
 
 
@@ -41,13 +43,16 @@ def get_resnet50_weights(args):
 
 
 def get_model(args, n_classes):
+    if n_classes > 2 and (not args.use_softmax):
+        raise Exception('Cannot use sigomid when n_classes > 2')
     if args.model == 'ResNet50':
         weights = get_resnet50_weights(args)
         model = resnet50(weights=weights)
-        model.fc = nn.Sequential(
-            nn.Linear(in_features=2048, out_features=n_classes),
-            nn.Sigmoid()
-        )
+        if args.use_softmax:
+            fc = nn.Linear(in_features=2048, out_features=n_classes)
+        else:
+            fc = nn.Linear(in_features=2048, out_features=1)
+        model.fc = fc
     else:
         raise NotImplementedError()
     return model
@@ -71,12 +76,28 @@ def get_optimizer(args, params):
     return optimizer
 
 
+def get_criterion(args):
+    if args.use_softmax:
+        criterion = nn.CrossEntropyLoss()
+    else:
+        criterion = nn.BCEWithLogitsLoss()
+    return criterion
+
+
+def get_classification_func(args, sigmoid_threshold=0.5):
+    if args.use_softmax:
+        return lambda x: torch.argmax(F.softmax(x, dim=1), dim=1)
+    else:
+        return lambda x: torch.sigmoid(x.squeeze()) >= sigmoid_threshold
+
+
 
 if __name__ == '__main__':
     train_dataloader, val_dataloader, test_dataloader = get_data(args)
-    model = get_model(args, 1) # TODO make it better ?
+    model = get_model(args, train_dataloader.dataset.n_classes)
     optimizer = get_optimizer(args, model.parameters())
-    criterion = nn.BCELoss()
+    criterion = get_criterion(args)
+    classification_func = get_classification_func(args)
     wandb.init(
         project='Resnet50 on Waterbirds',
         config=vars(args),
@@ -87,11 +108,13 @@ if __name__ == '__main__':
         val_dataloader=val_dataloader,
         model=model,
         optimizer=optimizer,
-        criterion=criterion
+        criterion=criterion,
+        classification_func=classification_func
     )
     test_model(
         test_dataloader=test_dataloader,
-        model=model
+        model=model,
+        classification_func=classification_func
     )
     model_state = model.state_dict()
     os.makedirs(args.save_path, exist_ok=True)
