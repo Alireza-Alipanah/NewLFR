@@ -139,3 +139,4 @@ def log_data(logger, train_data, test_data, val_data=None, get_yp_func=None):
         for group_idx in range(val_data.n_groups):
             y_idx, p_idx = get_yp_func(group_idx)
             logger.write(f'    Group {group_idx} (y={y_idx}, p={p_idx}): n = {val_data.group_counts[group_idx]:.0f}\n')
+            
