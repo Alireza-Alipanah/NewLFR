@@ -108,7 +108,7 @@ if __name__ == '__main__':
     )
     train_model(
         args=args,
-        train_dataloader=test_dataloader,
+        train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
         model=model,
         optimizer=optimizer,

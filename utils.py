@@ -125,11 +125,11 @@ def evaluate(
     with torch.no_grad():
         for img, batch_y, g, _ in dataloader:
             img = img.cuda()
-            batch_outputs = model(img).squeeze()
+            batch_outputs = model(img).squeeze().cpu()
             outputs = torch.concat((outputs, batch_outputs))
             y = torch.concat((y, batch_y))
             groups = torch.concat((groups, g))
-    outputs = outputs.cpu()
+    outputs = outputs
     pred = classification_func(outputs).numpy()
     y = y.cpu().int().numpy()
     groups = groups.cpu().numpy()
