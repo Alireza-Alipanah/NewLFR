@@ -100,4 +100,4 @@ if __name__ == '__main__':
         criterion=criterion
     )
     model_state = model.state_dict()
-    toch.save(model_state, args.save_path)
+    torch.save(model_state, args.save_path)
