@@ -56,5 +56,6 @@ if __name__ == '__main__':
     print(f'len validation:\t{len(val_dataloader)}')
     print(f'len test:\t{len(test_dataloader)}')
     for img, y, g, p in train_dataloader:
-        print(img, y, g, p, sep='\n')
+        print(img.shape, y.shape, g.shape, p.shape, sep='\t')
+        print(y, g, p, sep='\t')
     exit()
