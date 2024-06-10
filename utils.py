@@ -7,6 +7,14 @@ import wandb
 import torch
 
 
+def set_seed(seed):
+    torch.cuda.manual_seed(seed)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
+
 def load_data(basedir, batch_size, target_resolution=(224, 224)):
     train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=True)
     val_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=True) # TODO augment or not ?
