@@ -103,6 +103,11 @@ if __name__ == '__main__':
         project='Resnet50 on Waterbirds',
         config=vars(args),
     )
+    test_model(
+        test_dataloader=test_dataloader,
+        model=model,
+        classification_func=classification_func
+    )
     train_model(
         args=args,
         train_dataloader=test_dataloader,
