@@ -60,7 +60,7 @@ if __name__ == '__main__':
     train_dataloader, val_dataloader, test_dataloader = get_data(args)
     model = get_model(args, 1) # TODO make it better ?
     optimizer = get_optimizer(args, model.parameters())
-    criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.BCELoss()
     wandb.init(
         project='Resnet50 on Waterbirds',
         config=vars(args),
