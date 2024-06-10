@@ -4,6 +4,7 @@ from sklearn.metrics import accuracy_score
 import numpy as np
 import tqdm
 import wandb
+import torch
 
 
 def load_data(basedir, batch_size, target_resolution=(224, 224)):
