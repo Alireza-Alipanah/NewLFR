@@ -125,7 +125,7 @@ def evaluate(
             y = torch.concat((y, batch_y))
             groups = torch.concat((groups, g))
     outputs = outputs.cpu().numpy()
-    y = y.cpu().long().numpy()
+    y = y.cpu().int().numpy()
     groups = groups.cpu().numpy()
     group_data = calculate_group_accuracies(outputs, y, groups)
     return group_data
