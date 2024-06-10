@@ -106,6 +106,7 @@ def calculate_group_accuracies(outputs, y, groups, theshold=0.5):
         worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
     group_data['worst_group_accyracy'] = worst_group_acc
+    group_data['accuracy'] = accuracy_score(y, outputs >= threshold)
     return group_data
 
 
