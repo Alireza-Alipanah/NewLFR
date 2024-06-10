@@ -2,7 +2,7 @@ import argparse
 import os
 
 import torch
-from torchvision.models import resnet50
+from torchvision.models import resnet50, ResNet50_Weights
 import torch.nn as nn
 from torch.optim import SGD
 import wandb
@@ -22,15 +22,28 @@ parser.add_argument('--lr', default=1e-3, help='learning rate of optimizer', typ
 parser.add_argument('--batch_size', default=128, help='data loader batch size', type=int)
 parser.add_argument('--epochs', default=100, help='number of epochs', type=int)
 parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
-parser.add_argument('--pretrained', default=True, help='specify wether to use pretrained model', type=bool)
+parser.add_argument('--weights', default='ResNet50_Weights.IMAGENET1K_V1', help='specify the weights to use for the pretrained model', type=str)
 parser.add_argument('--save_path', default=os.path.join('/', 'kaggle', 'working', 'NewLFR', 'saved_models'), help='path to save the model', type=str)
 parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
 args = parser.parse_args()
 
 
+def get_resnet50_weights(args):
+    if args.weights == 'ResNet50_Weights.IMAGENET1K_V1':
+        weights = ResNet50_Weights.IMAGENET1K_V1
+    elif args.weights == 'ResNet50_Weights.IMAGENET1K_V2':
+        weights = ResNet50_Weights.IMAGENET1K_V2
+    elif args.weights == 'None':
+        weights = None
+    else:
+        raise NotImplementedError()
+    return weights
+
+
 def get_model(args, n_classes):
     if args.model == 'ResNet50':
-        model = resnet50(pretrained=args.pretrained)
+        weights = get_resnet50_weights(args)
+        model = resnet50(weights=weights)
         model.fc = nn.Sequential(
             nn.Linear(in_features=2048, out_features=n_classes),
             nn.Sigmoid()
