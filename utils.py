@@ -103,7 +103,6 @@ def calculate_group_accuracies(outputs, y, groups, classification_func):
         group_outputs = outputs[groups == group]
         group_pred = classification_func(group_outputs)
         group_y = y[groups == group]
-        print(list(zip(group_y, group_pred, group_outputs)))
         group_accuracy = accuracy_score(group_y.numpy(), group_pred.numpy())
         worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
