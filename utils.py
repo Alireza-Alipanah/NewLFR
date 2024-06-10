@@ -71,7 +71,6 @@ def train_model(
     criterion,
     classification_func
 ):
-    model = model.cuda()
     for epoch in tqdm.tqdm(range(args.epochs)):
         model.train()
         running_loss = 0
@@ -137,9 +136,10 @@ def evaluate(
     return group_data
 
 
-def test_model(test_dataloader, model, classification_func):
+def test_model(test_dataloader, model, classification_func, is_start=False):
     group_data = evaluate(test_dataloader, model, classification_func)
-    log_to_wandb('test', group_data)
+    prefix = 'test_start' if is_start else 'test'
+    log_to_wandb(prefix, group_data)
     print(
         'Test metrics:\n' + \
         '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])

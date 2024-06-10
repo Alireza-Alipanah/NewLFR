@@ -103,10 +103,12 @@ if __name__ == '__main__':
         project='Resnet50 on Waterbirds',
         config=vars(args),
     )
+    model = model.cuda()
     test_model(
         test_dataloader=test_dataloader,
         model=model,
-        classification_func=classification_func
+        classification_func=classification_func,
+        is_start=True
     )
     train_model(
         args=args,
