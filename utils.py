@@ -95,12 +95,12 @@ def train_model(
         )
 
 
-def calculate_group_accuracies(outputs, y, groups, theshold=0.5):
+def calculate_group_accuracies(outputs, y, groups, threshold=0.5):
     group_data = dict()
     worst_group_acc = float('inf')
     for group in np.unique(groups):
         group_outputs = outputs[groups == group]
-        group_pred = group_outputs >= theshold
+        group_pred = group_outputs >= threshold
         group_y = y[groups == group]
         group_accuracy = accuracy_score(group_y, group_pred)
         worst_group_acc = min(group_accuracy, worst_group_acc)
