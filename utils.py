@@ -74,7 +74,7 @@ def train_model(
     for epoch in tqdm_notebook(range(args.epochs), desc='epoch'):
         model.train()
         running_loss = 0
-        for batch_idx, (img, y, _, _) in tqdm_notebook(train_dataloader, desc='batch', leave=False):
+        for batch_idx, (img, y, _, _) in tqdm_notebook(enumerate(train_dataloader), desc='batch', leave=False):
             img, y = img.cuda(), y.long().cuda()
             optimizer.zero_grad()
             outputs = model(img).squeeze()
