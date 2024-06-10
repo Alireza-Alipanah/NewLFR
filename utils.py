@@ -58,4 +58,4 @@ if __name__ == '__main__':
     for img, y, g, p in train_dataloader:
         print(img.shape, y.shape, g.shape, p.shape, sep='\t')
         print(y, g, p, sep='\t')
-    exit()
+        exit()
