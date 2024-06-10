@@ -92,10 +92,10 @@ def get_classification_func(args, sigmoid_threshold=0.5):
         return lambda x: torch.sigmoid(x.squeeze()) >= sigmoid_threshold
 
 
-
 if __name__ == '__main__':
     train_dataloader, val_dataloader, test_dataloader = get_data(args)
     model = get_model(args, train_dataloader.dataset.n_classes)
+    model = model.cuda()
     optimizer = get_optimizer(args, model.parameters())
     criterion = get_criterion(args)
     classification_func = get_classification_func(args)
@@ -103,7 +103,6 @@ if __name__ == '__main__':
         project='Resnet50 on Waterbirds',
         config=vars(args),
     )
-    model = model.cuda()
     test_model(
         test_dataloader=test_dataloader,
         model=model,
