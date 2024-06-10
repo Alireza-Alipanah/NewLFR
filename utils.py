@@ -97,7 +97,6 @@ def train_model(
 
 
 def calculate_group_accuracies(outputs, y, groups, classification_func):
-    # TODO add mean accuracy (weighted mean accuracy of groups)
     group_data = dict()
     worst_group_acc = float('inf')
     mean_acc = 0
