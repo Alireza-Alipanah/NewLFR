@@ -75,12 +75,9 @@ def train_model(
         running_loss = 0
         outputs = torch.rand((0))
         for img, batch_y, _, _ in train_dataloader:
-            img, batch_y = img.cuda(), y.float().cuda()
+            img, batch_y = img.cuda(), batch_y.float().cuda()
             optimizer.zero_grad()
             batch_outputs = model(img).squeeze()
-            print('---------------------------')
-            print(img.shape, batch_outputs.shape, batch_y.shape, y.shape)
-            print('---------------------------')
             loss = criterion(batch_outputs, batch_y)
             loss.backward()
             optimizer.step()
