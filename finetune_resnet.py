@@ -50,13 +50,7 @@ def get_model(args, n_classes):
         model = resnet50(weights=weights)
         in_features = model.fc.in_features
         out_features = n_classes if args.use_softmax else 1
-        if args.use_softmax:
-            model.fc = nn.Linear(in_features=in_features, out_features=out_features)
-        else:
-            model.fc = nn.Sequential(
-                nn.Linear(in_features=in_features, out_features=out_features),
-                nn.Sigmoid()
-            )
+        model.fc = nn.Linear(in_features=in_features, out_features=out_features)
     else:
         raise NotImplementedError()
     return model
@@ -84,7 +78,7 @@ def get_criterion(args):
     if args.use_softmax:
         criterion = nn.CrossEntropyLoss()
     else:
-        criterion = nn.BCELoss()
+        criterion = nn.BCEWithLogitsLoss()
     return criterion
 
 
@@ -92,7 +86,7 @@ def get_classification_func(args, sigmoid_threshold=0.5):
     if args.use_softmax:
         return lambda x: torch.argmax(F.softmax(x, dim=1), dim=1)
     else:
-        return lambda x: x >= sigmoid_threshold
+        return lambda x: F.sigmoid(x.squeeze()) >= sigmoid_threshold
 
 
 if __name__ == '__main__':

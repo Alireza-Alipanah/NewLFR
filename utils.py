@@ -96,20 +96,19 @@ def train_model(
         )
 
 
-def calculate_group_accuracies(outputs, y, groups, classification_func):
+def calculate_group_accuracies(pred, y, groups):
     group_data = dict()
     worst_group_acc = float('inf')
     mean_acc = 0
     for group in np.unique(groups):
-        group_outputs = outputs[groups == group]
-        group_pred = classification_func(group_outputs)
+        group_pred = pred[groups == group]
         group_y = y[groups == group]
-        group_accuracy = accuracy_score(group_y.numpy(), group_pred.numpy())
+        group_accuracy = accuracy_score(group_y, group_pred)
         worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
-        mean_acc += group_accuracy * len(group_outputs) / len(outputs)
+        mean_acc += group_accuracy * len(group_pred) / len(pred)
     group_data['worst_group_accuracy'] = worst_group_acc
-    group_data['accuracy'] = accuracy_score(y.numpy(), classification_func(outputs).numpy())
+    group_data['accuracy'] = accuracy_score(y, pred)
     group_data['mean_accuracy'] = mean_acc
     return group_data
 
@@ -126,14 +125,15 @@ def evaluate(
     with torch.no_grad():
         for img, batch_y, g, _ in dataloader:
             img = img.cuda()
-            batch_outputs = model(img).squeeze().cpu()
+            batch_outputs = model(img).squeeze()
             outputs = torch.concat((outputs, batch_outputs))
             y = torch.concat((y, batch_y))
             groups = torch.concat((groups, g))
     outputs = outputs.cpu()
-    y = y.cpu().int()
-    groups = groups.cpu()
-    group_data = calculate_group_accuracies(outputs, y, groups, classification_func)
+    pred = classification_func(outputs).numpy()
+    y = y.cpu().int().numpy()
+    groups = groups.cpu().numpy()
+    group_data = calculate_group_accuracies(pred, y, groups)
     return group_data
 
 
