@@ -49,11 +49,8 @@ def get_model(args, n_classes):
         weights = get_resnet50_weights(args)
         model = resnet50(weights=weights)
         in_features = model.fc.in_features
-        if args.use_softmax:
-            fc = nn.Linear(in_features=in_features, out_features=n_classes)
-        else:
-            fc = nn.Linear(in_features=in_features, out_features=1)
-        model.fc = fc
+        out_features = n_classes if args.use_softmax else 1
+        model.fc = nn.Linear(in_features=in_features, out_features=out_features)
     else:
         raise NotImplementedError()
     return model
