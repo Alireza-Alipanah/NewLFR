@@ -2,7 +2,7 @@ from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data
 
 from sklearn.metrics import accuracy_score
 import numpy as np
-import tqdm
+from tqdm import tqdm_notebook
 import wandb
 import torch
 
@@ -71,10 +71,10 @@ def train_model(
     criterion,
     classification_func
 ):
-    for epoch in tqdm.tqdm(range(args.epochs)):
+    for epoch in tqdm_notebook(range(args.epochs), desc='epoch'):
         model.train()
         running_loss = 0
-        for img, y, _, _ in train_dataloader:
+        for batch_idx, (img, y, _, _) in tqdm_notebook(train_dataloader, desc='batch', leave=False):
             img, y = img.cuda(), y.long().cuda()
             optimizer.zero_grad()
             outputs = model(img).squeeze()
