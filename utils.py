@@ -76,7 +76,7 @@ def train_model(
         running_loss = 0
         for batch_idx, (img, y, _, _) in tqdm_notebook(enumerate(train_dataloader), desc='batch', leave=False):
             y = y.long() if args.use_softmax else y.float()
-            img, y = img.cuda(), y.long().cuda()
+            img, y = img.cuda(), y.cuda()
             optimizer.zero_grad()
             outputs = model(img).squeeze()
             loss = criterion(outputs, y)
