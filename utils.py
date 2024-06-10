@@ -100,6 +100,7 @@ def calculate_group_accuracies(outputs, y, groups, classification_func):
     # TODO add mean accuracy (weighted mean accuracy of groups)
     group_data = dict()
     worst_group_acc = float('inf')
+    mean_acc = 0
     for group in np.unique(groups):
         group_outputs = outputs[groups == group]
         group_pred = classification_func(group_outputs)
@@ -107,8 +108,10 @@ def calculate_group_accuracies(outputs, y, groups, classification_func):
         group_accuracy = accuracy_score(group_y.numpy(), group_pred.numpy())
         worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
+        mean_acc += group_accuracy * len(group_outputs) / len(outputs)
     group_data['worst_group_accuracy'] = worst_group_acc
     group_data['accuracy'] = accuracy_score(y.numpy(), classification_func(outputs).numpy())
+    group_data['mean_accuracy'] = mean_acc
     return group_data
 
 
