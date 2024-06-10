@@ -100,8 +100,8 @@ def calculate_group_accuracies(outputs, y, groups, theshold=0.5):
     worst_group_acc = float('inf')
     for group in np.unique(groups):
         group_outputs = outputs[groups == group]
+        group_pred = group_outputs >= theshold
         group_y = y[groups == group]
-        group_pred = group_y >= theshold
         print('-----------------------------')
         print(group_y)
         print(group_pred)
