@@ -20,25 +20,26 @@ from utils import (
     get_classification_func
 )
 
-
 if not torch.cuda.is_available():
     raise Exception('cuda not available')
 
-parser = argparse.ArgumentParser('Pretraining Resnet50')
-parser.add_argument('--base_dir', default='/kaggle/working/waterbird_complete95_forest2water2', help='base directory of images', type=str)
-parser.add_argument('--optimizer', default='SGD', help='optimizer to use', type=str)
-parser.add_argument('--momentum_decay', default=0.9, help='momentum decay of optimizer', type=float)
-parser.add_argument('--wd', default=1e-3, help='weight decay of optimizer', type=float)
-parser.add_argument('--lr', default=1e-3, help='learning rate of optimizer', type=float)
-parser.add_argument('--batch_size', default=128, help='data loader batch size', type=int)
-parser.add_argument('--epochs', default=100, help='number of epochs', type=int)
-parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
-parser.add_argument('--weights', default='ResNet50_Weights.IMAGENET1K_V1', help='specify the weights to use for the pretrained model', type=str)
-parser.add_argument('--save_path', default=os.path.join('/', 'kaggle', 'working', 'NewLFR', 'saved_models'), help='path to save the model', type=str)
-parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
-parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
-parser.add_argument('--seed', default=None, help='seed', type=int)
-args = parser.parse_args()
+
+def get_args():
+    parser = argparse.ArgumentParser('Pretraining Resnet50')
+    parser.add_argument('--base_dir', default='/kaggle/working/waterbird_complete95_forest2water2', help='base directory of images', type=str)
+    parser.add_argument('--optimizer', default='SGD', help='optimizer to use', type=str)
+    parser.add_argument('--momentum_decay', default=0.9, help='momentum decay of optimizer', type=float)
+    parser.add_argument('--wd', default=1e-3, help='weight decay of optimizer', type=float)
+    parser.add_argument('--lr', default=1e-3, help='learning rate of optimizer', type=float)
+    parser.add_argument('--batch_size', default=128, help='data loader batch size', type=int)
+    parser.add_argument('--epochs', default=100, help='number of epochs', type=int)
+    parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
+    parser.add_argument('--weights', default='ResNet50_Weights.IMAGENET1K_V1', help='specify the weights to use for the pretrained model', type=str)
+    parser.add_argument('--save_path', default=os.path.join('/', 'kaggle', 'working', 'NewLFR', 'saved_models'), help='path to save the model', type=str)
+    parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
+    parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
+    parser.add_argument('--seed', default=None, help='seed', type=int)
+    args = parser.parse_args()
 
 
 def get_data(args):
@@ -47,6 +48,7 @@ def get_data(args):
 
 
 if __name__ == '__main__':
+    args = get_args()
     if args.seed is not None:
         set_seed(args.seed)
     train_dataloader, val_dataloader, test_dataloader = get_data(args)

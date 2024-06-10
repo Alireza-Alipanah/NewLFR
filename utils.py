@@ -15,8 +15,15 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def load_data(basedir, batch_size, target_resolution=(224, 224), validation_for_train=False):
-    train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=True)
+def load_data(
+    basedir,
+    batch_size,
+    target_resolution=(224, 224),
+    validation_for_train=False,
+    augment_train=True,
+    shuffle_train=True
+):
+    train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=augment_train)
     val_transform = get_transform_cub(target_resolution=target_resolution, train=validation_for_train, augment_data=True) # TODO augment or not ?
     test_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=False)
 
@@ -38,7 +45,7 @@ def load_data(basedir, batch_size, target_resolution=(224, 224), validation_for_
 
     train_dataloader = get_loader(
         data=train_dataset,
-        train=True,
+        train=shuffle_train,
         reweight_groups=None,
         reweight_classes=None,
         reweight_places=None,
