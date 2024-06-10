@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import torch
 from torchvision.models import resnet50
@@ -24,7 +25,8 @@ parser.add_argument('--batch_size', default=128, help='data loader batch size', 
 parser.add_argument('--epochs', default=100, help='number of epochs', type=int)
 parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
 parser.add_argument('--pretrained', default=True, help='specify wether to use pretrained model', type=bool)
-parser.add_argument('--save_path', default='/kaggle/working/resnet50_waterbirds.pth', help='path to save the model', type=str)
+parser.add_argument('--save_path', default=os.path.join('/', 'kaggle', 'working', 'NewLFR', 'saved_models'), help='path to save the model', type=str)
+parser.add_argument('--save_name', default='resnet50_waterbirds.pth', help='name of the saved model file', type=str)
 args = parser.parse_args()
 
 
@@ -111,4 +113,5 @@ if __name__ == '__main__':
         criterion=criterion
     )
     model_state = model.state_dict()
-    torch.save(model_state, args.save_path)
+    os.makedirs(args.save_path, exist_ok=True)
+    torch.save(model_state, os.path.join(args.save_path, args.save_name))
