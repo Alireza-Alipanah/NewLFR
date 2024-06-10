@@ -3,6 +3,7 @@ from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data
 from sklearn.metrics import accuracy_score
 import numpy as np
 import tqdm
+import wandb
 
 
 def load_data(basedir, batch_size, target_resolution=(224, 224)):
