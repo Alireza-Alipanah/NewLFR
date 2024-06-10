@@ -15,7 +15,7 @@ if not torch.cuda.is_available():
 
 
 def get_args():
-    parser = argparse.ArgumentParser('Pretraining Resnet50')
+    parser = argparse.ArgumentParser('Extracting Resnet50 features')
     parser.add_argument('--base_dir', default='/kaggle/working/waterbird_complete95_forest2water2', help='base directory of images', type=str)
     parser.add_argument('--batch_size', default=128, help='data loader batch size', type=int)
     parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
