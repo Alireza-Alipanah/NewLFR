@@ -1,6 +1,6 @@
 """
 COPIED FROM https://github.com/PolinaKirichenko/deep_feature_reweighting/blob/main/wb_data.py
-"""`
+"""
 
 
 import os
