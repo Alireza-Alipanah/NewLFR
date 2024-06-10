@@ -141,7 +141,7 @@ def test_model(test_dataloader, model, classification_func, is_start=False):
     prefix = 'test_start' if is_start else 'test'
     log_to_wandb(prefix, group_data)
     print(
-        'Test metrics:\n' + \
+        'Test metrics:\n\t' + \
         '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
     )
 
