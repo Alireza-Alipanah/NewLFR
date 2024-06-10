@@ -6,6 +6,7 @@ import torch.nn as nn
 from torch.optim import SGD
 import wandb
 import tqdm
+from sklearn.metrics import accuracy_score
 
 from utils import load_data
 
@@ -63,21 +64,31 @@ def train_model(
     optimizer,
     criterion
 ):
+    y = torch.rand((0))
+    for _, batch_y, _, _ in train_dataloader:
+        y = torch.concat((y, batch_y))
     model = model.cuda()
     for epoch in tqdm.tqdm(range(args.epochs)):
         model.train()
         running_loss = 0
-        for img, y, _, _ in train_dataloader:
-            img, y = img.cuda(), y.float().cuda()
+        outputs = torch.rand((0))
+        for img, batch_y, _, _ in train_dataloader:
+            img, batch_y = img.cuda(), y.float().cuda()
             optimizer.zero_grad()
-            outputs = model(img).squeeze()
-            loss = criterion(outputs, y)
+            batch_outputs = model(img).squeeze()
+            loss = criterion(batch_outputs, batch_y)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
             wandb.log({'train/step_loss': loss.item()})
+            outputs = torch.concat((outputs, batch_outputs))
         running_loss /= len(train_dataloader)
-        wandb.log({'epoch': epoch, 'train/avg_loss': running_loss})
+        acc = accuracy_score(y, outputs)
+        wandb.log({
+            'epoch': epoch,
+            'train/avg_loss': running_loss,
+            'train/epoch_accuracy': acc
+            })
 
 
 
