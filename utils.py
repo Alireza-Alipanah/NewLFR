@@ -9,7 +9,7 @@ import torch
 
 def load_data(basedir, batch_size, target_resolution=(224, 224)):
     train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=True)
-    val_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=True)
+    val_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=True) # TODO augment or not ?
     test_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=False)
 
     train_dataset = WaterBirdsDataset(
@@ -95,13 +95,14 @@ def train_model(
         )
 
 
-def calculate_group_accuracies(outputs, y, groups):
+def calculate_group_accuracies(outputs, y, groups, theshold=0.5):
     group_data = dict()
     worst_group_acc = float('inf')
     for group in np.unique(groups):
         group_outputs = outputs[groups == group]
         group_y = y[groups == group]
-        group_accuracy = accuracy_score(group_y, group_outputs)
+        group_pred = group_y >= theshold
+        group_accuracy = accuracy_score(group_pred, group_outputs)
         group_accuracy = min(group_accuracy, worst_group_acc)
         group_data[f'group_{group}_accuracy'] = group_accuracy
     group_data['worst_group_accyracy'] = worst_group_acc
