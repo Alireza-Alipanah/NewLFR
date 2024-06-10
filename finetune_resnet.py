@@ -8,7 +8,17 @@ from torch.optim import SGD
 from torchvision.models import resnet50, ResNet50_Weights
 import wandb
 
-from utils import load_data, train_model, test_model, set_seed
+from utils import (
+    load_data,
+    train_model,
+    test_model,
+    set_seed,
+    get_resnet50_weights,
+    get_model,
+    get_optimizer,
+    get_criterion,
+    get_classification_func
+)
 
 
 if not torch.cuda.is_available():
@@ -31,63 +41,9 @@ parser.add_argument('--seed', default=None, help='seed', type=int)
 args = parser.parse_args()
 
 
-def get_resnet50_weights(args):
-    if args.weights == 'ResNet50_Weights.IMAGENET1K_V1':
-        weights = ResNet50_Weights.IMAGENET1K_V1
-    elif args.weights == 'ResNet50_Weights.IMAGENET1K_V2':
-        weights = ResNet50_Weights.IMAGENET1K_V2
-    elif args.weights == 'None':
-        weights = None
-    else:
-        raise NotImplementedError()
-    return weights
-
-
-def get_model(args, n_classes):
-    if n_classes > 2 and (not args.use_softmax):
-        raise Exception('Cannot use sigomid when n_classes > 2')
-    if args.model == 'ResNet50':
-        weights = get_resnet50_weights(args)
-        model = resnet50(weights=weights)
-        in_features = model.fc.in_features
-        out_features = n_classes if args.use_softmax else 1
-        model.fc = nn.Linear(in_features=in_features, out_features=out_features)
-    else:
-        raise NotImplementedError()
-    return model
-
-
 def get_data(args):
     train_dataloader, val_dataloader, test_dataloader = load_data(basedir=args.base_dir, batch_size=args.batch_size)
     return train_dataloader, val_dataloader, test_dataloader
-
-
-def get_optimizer(args, params):
-    if args.optimizer == 'SGD':
-        optimizer = SGD(
-            params=params,
-            momentum=args.momentum_decay,
-            weight_decay=args.wd,
-            lr=args.lr,
-        )
-    else:
-        raise NotImplementedError()
-    return optimizer
-
-
-def get_criterion(args):
-    if args.use_softmax:
-        criterion = nn.CrossEntropyLoss()
-    else:
-        criterion = nn.BCEWithLogitsLoss()
-    return criterion
-
-
-def get_classification_func(args, sigmoid_threshold=0.5):
-    if args.use_softmax:
-        return lambda x: torch.argmax(F.softmax(x, dim=1), dim=1)
-    else:
-        return lambda x: F.sigmoid(x.squeeze()) >= sigmoid_threshold
 
 
 if __name__ == '__main__':

@@ -15,9 +15,9 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def load_data(basedir, batch_size, target_resolution=(224, 224)):
+def load_data(basedir, batch_size, target_resolution=(224, 224), validation_for_train=False):
     train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=True)
-    val_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=True) # TODO augment or not ?
+    val_transform = get_transform_cub(target_resolution=target_resolution, train=validation_for_train, augment_data=True) # TODO augment or not ?
     test_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=False)
 
     train_dataset = WaterBirdsDataset(
@@ -153,6 +153,61 @@ def test_model(test_dataloader, model, classification_func, is_start=False):
         'Test metrics:\n\t' + \
         '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
     )
+
+
+def get_resnet50_weights(args):
+    if args.weights == 'ResNet50_Weights.IMAGENET1K_V1':
+        weights = ResNet50_Weights.IMAGENET1K_V1
+    elif args.weights == 'ResNet50_Weights.IMAGENET1K_V2':
+        weights = ResNet50_Weights.IMAGENET1K_V2
+    elif args.weights == 'None':
+        weights = None
+    else:
+        raise NotImplementedError()
+    return weights
+
+
+def get_model(args, n_classes):
+    if n_classes > 2 and (not args.use_softmax):
+        raise Exception('Cannot use sigomid when n_classes > 2')
+    if args.model == 'ResNet50':
+        weights = get_resnet50_weights(args)
+        model = resnet50(weights=weights)
+        in_features = model.fc.in_features
+        out_features = n_classes if args.use_softmax else 1
+        model.fc = nn.Linear(in_features=in_features, out_features=out_features)
+    else:
+        raise NotImplementedError()
+    return model
+
+
+
+def get_optimizer(args, params):
+    if args.optimizer == 'SGD':
+        optimizer = SGD(
+            params=params,
+            momentum=args.momentum_decay,
+            weight_decay=args.wd,
+            lr=args.lr,
+        )
+    else:
+        raise NotImplementedError()
+    return optimizer
+
+
+def get_criterion(args):
+    if args.use_softmax:
+        criterion = nn.CrossEntropyLoss()
+    else:
+        criterion = nn.BCEWithLogitsLoss()
+    return criterion
+
+
+def get_classification_func(args, sigmoid_threshold=0.5):
+    if args.use_softmax:
+        return lambda x: torch.argmax(F.softmax(x, dim=1), dim=1)
+    else:
+        return lambda x: F.sigmoid(x.squeeze()) >= sigmoid_threshold
 
 
 
