@@ -31,7 +31,10 @@ args = parser.parse_args()
 def get_model(args, n_classes):
     if args.model == 'ResNet50':
         model = resnet50(pretrained=args.pretrained)
-        model.fc = nn.Linear(in_features=2048, out_features=n_classes)
+        model.fc = nn.Sequential(
+            nn.Linear(in_features=2048, out_features=n_classes),
+            nn.Sigmoid()
+        )
     else:
         raise NotImplementedError()
     return model
