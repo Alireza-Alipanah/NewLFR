@@ -104,11 +104,11 @@ def calculate_group_accuracies(outputs, y, groups, classification_func):
         group_outputs = outputs[groups == group]
         group_pred = classification_func(group_outputs)
         group_y = y[groups == group]
-        group_accuracy = accuracy_score(group_y, group_pred)
+        group_accuracy = accuracy_score(group_y.numpy(), group_pred.numpy())
         worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
     group_data['worst_group_accuracy'] = worst_group_acc
-    group_data['accuracy'] = accuracy_score(y, classification_func(outputs))
+    group_data['accuracy'] = accuracy_score(y.numpy(), classification_func(outputs).numpy())
     return group_data
 
 
@@ -128,9 +128,9 @@ def evaluate(
             outputs = torch.concat((outputs, batch_outputs))
             y = torch.concat((y, batch_y))
             groups = torch.concat((groups, g))
-    outputs = outputs.cpu().numpy()
-    y = y.cpu().int().numpy()
-    groups = groups.cpu().numpy()
+    outputs = outputs.cpu()
+    y = y.cpu().int()
+    groups = groups.cpu()
     group_data = calculate_group_accuracies(outputs, y, groups, classification_func)
     return group_data
 
