@@ -2,20 +2,24 @@ from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data
 
 
 def load_data(basedir, batch_size):
+    train_transform = lambda x: get_transform_cub(x, train=True, augment_data=True)
+    val_transform = lambda x: get_transform_cub(x, train=False, augment_data=True)
+    test_transform = lambda x: get_transform_cub(x, train=False, augment_data=False)
+
     train_dataset = WaterBirdsDataset(
         basedir=basedir,
         split='train',
-        transform=get_transform_cub
+        transform=train_transform
         )
     val_dataset = WaterBirdsDataset(
         basedir=basedir,
         split='val',
-        transform=get_transform_cub
+        transform=val_transform
         )
     test_dataset = WaterBirdsDataset(
         basedir=basedir,
         split='test',
-        transform=get_transform_cub
+        transform=test_transform
         )
 
     train_dataloader = get_loader(
