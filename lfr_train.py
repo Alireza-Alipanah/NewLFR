@@ -123,7 +123,6 @@ if __name__ == '__main__':
         project='LFR on Waterbirds',
         config=vars(args),
     )
-    test_model()
     print('training...')
     LRModel.fit(train_embeddings, train_y)
     print('testing...')
