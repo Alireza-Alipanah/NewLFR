@@ -45,6 +45,8 @@ def load_embeddings(args, model, loader):
     p = torch.rand((0))
     with torch.no_grad():
         for idx, (img, batch_y, batch_g, batch_p) in tqdm.tqdm(enumerate(loader)):
+            if idx == 10:
+                break
             img = img.cuda()
             btach_embeddings = model(img).cpu()
             embeddings = torch.concat((embeddings, btach_embeddings))
