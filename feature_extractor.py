@@ -19,7 +19,6 @@ def get_args():
     parser.add_argument('--base_dir', default='/kaggle/working/waterbird_complete95_forest2water2', help='base directory of images', type=str)
     parser.add_argument('--batch_size', default=128, help='data loader batch size', type=int)
     parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
-    parser.add_argument('--weights', default='ResNet50_Weights.IMAGENET1K_V1', help='specify the weights to use for the pretrained model', type=str)
     parser.add_argument('--model_path', help='path to the saved model', type=str)
     parser.add_argument('--save_path', help='embeddings save path', type=str)
     parser.add_argument('--save_name', help='name of the embeddings file', type=str)
