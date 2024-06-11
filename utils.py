@@ -120,7 +120,7 @@ def train_model(
 
 
 def get_train_group_proportions(array):
-    flattened_arr = array.flatten()
+    flattened_arr = array.flatten().astype('int')
     value_counts = np.bincount(flattened_arr)
     total_count = np.sum(value_counts)
     proportions = value_counts / total_count
