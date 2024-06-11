@@ -10,7 +10,7 @@ class EmbeddingsDataset(Dataset):
         except ValueError:
             raise(f"Unknown split {split}")
         df = pd.read_csv(df_path)
-        df = df[split == split_i]
+        df = df[df.split == split_i]
         if split_num != -1:
             idx = df.index.tolist()
             selected_idx = train_test_split(idx, test_size=0.5, random_state=random_state)[split_num]
