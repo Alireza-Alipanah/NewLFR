@@ -76,12 +76,12 @@ def get_training_data(dataset, model, number_to_pick):
     embeddings, y, g, p = get_all_data(dataset)
     if number_to_pick * 2 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
-    model.to(device)
+    model = model.cuda()
     model.eval()
     losses = []
     with torch.no_grad():
         for idx in len(range(embeddings)):
-            embedding = torch.from_numpy(embeddings[i]).to(device)
+            embedding = torch.from_numpy(embeddings[i]).cuda()
             output = model(e)
             loss = cirterion(output.squeeze().cpu(), torch.from_numpy(y[i]).cpu())
             losses.append(loss.item())
