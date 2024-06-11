@@ -134,10 +134,6 @@ def calculate_group_accuracies(pred, y, groups, proportions_dict):
     worst_group_acc = float('inf')
     mean_acc = 0
     for group in np.unique(groups):
-        print('---------------')
-        print(pred.shape)
-        print(groups.shape)
-        print('---------------')
         group_pred = pred[groups == group]
         group_y = y[groups == group]
         group_accuracy = accuracy_score(group_y, group_pred)
