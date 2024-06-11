@@ -5,6 +5,10 @@ import numpy as np
 from tqdm import tqdm
 import wandb
 import torch
+from torchvision.models import resnet50, ResNet50_Weights
+from torch.optim import SGD
+import torch.nn.functional as F
+import torch.nn as nn
 
 
 def set_seed(args):

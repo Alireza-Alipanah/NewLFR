@@ -2,10 +2,6 @@ import argparse
 import os
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import SGD
-from torchvision.models import resnet50, ResNet50_Weights
 import wandb
 
 from utils import (
