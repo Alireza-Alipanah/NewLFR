@@ -56,7 +56,7 @@ def get_datasets(args):
     val1 = EmbeddingsDataset(
         args.embeddings_dir,
         args.embeddings_dim,
-        split='valid',
+        split='val',
         split_num=0,
         random_state=args.seed
     )
