@@ -5,6 +5,7 @@ import torch
 import tqdm
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+import wandb
 
 from lfr_data import EmbeddingsDataset, get_loader
 from utils import (
