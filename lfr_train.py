@@ -31,6 +31,7 @@ def get_args():
     parser.add_argument('--number_to_pick', help='number of low and high loss data to pick from each', type=int)
     parser.add_argument('--C', help='C regularization', type=float)
     parser.add_argument('--model_path', help='path to the saved model', type=str)
+    parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
     args = parser.parse_args()
     return args
 
