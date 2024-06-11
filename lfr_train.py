@@ -18,7 +18,8 @@ from utils import (
 )
 
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+if not torch.cuda.is_available():
+    raise Exception('cuda not available')
 
 
 def get_args():
