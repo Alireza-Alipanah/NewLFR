@@ -7,9 +7,10 @@ import wandb
 import torch
 
 
-def set_seed(seed):
+def set_seed(args):
     if args.seed is None:
         return
+    seed = args.seed
     torch.cuda.manual_seed(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
