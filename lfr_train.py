@@ -74,7 +74,8 @@ def get_datasets(args):
 def get_training_data(args, dataset, model, number_to_pick):
     cirterion = get_criterion(args)
     embeddings, y, g, p = get_all_data(dataset)
-    y = y.long() if args.use_softmax else y.float()
+    y_torch = torch.from_numpy()
+    y_torch = y_torch.long() if args.use_softmax else y_torch.float()
     if number_to_pick * 2 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
     model = model.cuda()
@@ -84,7 +85,7 @@ def get_training_data(args, dataset, model, number_to_pick):
         for idx in range(len(embeddings)):
             embedding = torch.from_numpy(embeddings[idx]).cuda()
             output = model.fc(embedding)
-            loss = cirterion(output.squeeze().float().cpu(), torch.from_numpy(y[idx]).cpu())
+            loss = cirterion(output.squeeze().float().cpu(), y_torch[idx].cpu())
             losses.append(loss.item())
     idx = len(range(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i], reverse=True)
