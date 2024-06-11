@@ -83,9 +83,9 @@ def get_training_data(args, dataset, model, number_to_pick):
     losses = []
     with torch.no_grad():
         for idx in range(len(embeddings)):
-            embedding = torch.from_numpy(embeddings[idx]).cuda()
+            embedding = torch.from_numpy(embeddings[idx]).float().cuda()
             output = model.fc(embedding)
-            loss = cirterion(output.squeeze().float().cpu(), y_torch[idx].cpu())
+            loss = cirterion(output.squeeze().cpu(), y_torch[idx].cpu())
             losses.append(loss.item())
     idx = len(range(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i], reverse=True)
