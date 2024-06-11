@@ -113,12 +113,12 @@ if __name__ == '__main__':
     train_embeddings, train_y, train_groups, _ = get_training_data(args, val1, model, args.number_to_pick)
     val_embeddings, val_y, val_groups, _ = get_all_data(val2)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
-    scaler = StandardScaler()
-    train_embeddings = scaler.fit_transform(train_embeddings)
-    val_embeddings = scaler.transform(val_embeddings)
-    test_embeddings = scaler.transform(test_embeddings)
+    # scaler = StandardScaler()
+    # train_embeddings = scaler.fit_transform(train_embeddings)
+    # val_embeddings = scaler.transform(val_embeddings)
+    # test_embeddings = scaler.transform(test_embeddings)
     group_proportions = get_train_group_proportions(train.group)
-    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='saga')
+    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear')
     wandb.init(
         project='LFR on Waterbirds',
         config=vars(args),
