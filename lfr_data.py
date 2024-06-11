@@ -1,5 +1,5 @@
 from sklearn.model_selection import train_test_split
-from torch.Data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 
 
