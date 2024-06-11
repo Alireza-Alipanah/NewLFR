@@ -74,7 +74,7 @@ def get_datasets(args):
 def get_training_data(args, dataset, model, number_to_pick):
     cirterion = get_criterion(args)
     embeddings, y, g, p = get_all_data(dataset)
-    y_torch = torch.from_numpy()
+    y_torch = torch.from_numpy(y)
     y_torch = y_torch.long() if args.use_softmax else y_torch.float()
     if number_to_pick * 2 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
