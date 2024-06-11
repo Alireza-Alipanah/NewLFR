@@ -71,9 +71,10 @@ def get_datasets(args):
     return train, val1, val2, test
 
 
-def get_training_data(dataset, model, number_to_pick):
+def get_training_data(args, dataset, model, number_to_pick):
     cirterion = get_criterion(args)
     embeddings, y, g, p = get_all_data(dataset)
+    y = y.long() if args.use_softmax else y.float()
     if number_to_pick * 2 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
     model = model.cuda()
@@ -83,7 +84,7 @@ def get_training_data(dataset, model, number_to_pick):
         for idx in range(len(embeddings)):
             embedding = torch.from_numpy(embeddings[idx]).cuda()
             output = model.fc(embedding)
-            loss = cirterion(output.squeeze().cpu(), torch.from_numpy(y[idx]).cpu())
+            loss = cirterion(output.squeeze().float().cpu(), torch.from_numpy(y[idx]).cpu())
             losses.append(loss.item())
     idx = len(range(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i], reverse=True)
@@ -107,7 +108,7 @@ if __name__ == '__main__':
     model = get_model(args, args.n_classes)
     load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
     train, val1, val2, test = get_datasets(args)
-    train_embeddings, train_y, train_groups, _ = get_training_data(val1, model, args.number_to_pick)
+    train_embeddings, train_y, train_groups, _ = get_training_data(args, val1, model, args.number_to_pick)
     val_embeddings, val_y, val_groups, _ = get_all_data(val2)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
     scaler = StandardScaler()
