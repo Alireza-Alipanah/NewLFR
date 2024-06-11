@@ -87,7 +87,7 @@ def get_training_data(args, dataset, model, number_to_pick):
             output = model.fc(embedding)
             loss = cirterion(output.squeeze().cpu(), y_torch[idx].cpu())
             losses.append(loss.item())
-    idx = len(range(losses))
+    idx = range(len(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i], reverse=True)
     chosen_idx = sorted_losses[:number_to_pick] + sorted_losses[-number_to_pick:]
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
