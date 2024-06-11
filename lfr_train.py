@@ -40,10 +40,6 @@ def get_args():
 def get_all_data(dataset):
     # TODO better way of doing this?
     embedding, y, g, p = dataset[:]
-    embedding = embedding.numpy()
-    y = y.numpy()
-    g = g.numpy()
-    p = p.numpy()
     return embedding, y, g, p
 
 
