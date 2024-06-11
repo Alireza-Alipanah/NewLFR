@@ -84,7 +84,7 @@ def create_dataframe(embeddings, y, g, p, split):
 
 def save_dataframe(args, df):
     os.makedirs(args.save_path, exist_ok=True)
-    df.to_csv(os.path.join(args.save_path, args.save_name))
+    df.to_csv(os.path.join(args.save_path, args.save_name), index=False)
 
 
 if __name__ == '__main__':
