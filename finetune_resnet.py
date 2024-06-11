@@ -40,6 +40,7 @@ def get_args():
     parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
     args = parser.parse_args()
+    return args
 
 
 def get_data(args):
