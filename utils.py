@@ -265,6 +265,7 @@ def print_weigth_match(loaded_state_dict, model):
 
 def load_model_from_state_dict(args):
     model = resnet50(weights=None)
+    model.fc = nn.Identity()
     state_dict = torch.load(args.model_path)
     print_weigth_match(state_dict, model)
     model.load_state_dict(state_dict, strict=False)
