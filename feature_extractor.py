@@ -90,6 +90,6 @@ if __name__ == '__main__':
     model.fc = nn.Identity()
     model.cuda()
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(args)
-    embeddings, y, g, p, split = extract_embeddings(args, model, train_loader, val_loader, test_loader)
+    embeddings, y, g, p, split = extract_embeddings(args, model, train_dataloader, val_dataloader, test_dataloader)
     df = create_dataframe(embeddings, y, g, p, split)
     save_dataframe(args, df)
