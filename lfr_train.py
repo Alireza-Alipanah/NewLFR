@@ -13,7 +13,8 @@ from utils import (
     get_criterion,
     log_to_wandb,
     calculate_group_accuracies,
-    get_train_group_proportions
+    get_train_group_proportions,
+    load_model_from_state_dict
 )
 
 
@@ -32,6 +33,7 @@ def get_args():
     parser.add_argument('--seed', default=1, help='seed', type=int)
     parser.add_argument('--number_to_pick', help='number of low and high loss data to pick from each', type=int)
     parser.add_argument('--C', help='C regularization', type=float)
+    parser.add_argument('--model_path', help='path to the saved model', type=str)
     args = parser.parse_args()
     return args
 
@@ -108,6 +110,7 @@ if __name__ == '__main__':
     args.weights = 'None'
     set_seed(args)
     model = get_model(args, args.n_classes)
+    load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
     train, val1, val2, test = get_datasets(args)
     train_embeddings, train_y, train_groups, _ = get_training_data(val1, model, args.number_to_pick)
     val_embeddings, val_y, val_groups, _ = get_all_data(val2)

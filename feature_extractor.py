@@ -89,7 +89,7 @@ def save_dataframe(args, df):
 
 if __name__ == '__main__':
     args = get_args()
-    model = load_model_from_state_dict(args)
+    model = load_model_from_state_dict(args.model_path)
     model.fc = nn.Identity()
     model.cuda()
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(args)
