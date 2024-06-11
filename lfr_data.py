@@ -15,7 +15,7 @@ class EmbeddingsDataset(Dataset):
             idx = df.index.tolist()
             selected_idx = train_test_split(idx, test_size=0.5, random_state=random_state)[split_num]
             df = df.iloc[selected_idx, :].reset_index()
-        self.embeddings = df.iloc[:, : embeddings_dim - 1].values
+        self.embeddings = df.iloc[:, : embeddings_dim].values
         self.label = df['label'].values
         self.group = df['group'].values
         self.place_label = df['place_label'].values
