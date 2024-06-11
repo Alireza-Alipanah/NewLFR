@@ -82,7 +82,7 @@ def get_training_data(dataset, model, number_to_pick):
     with torch.no_grad():
         for idx in range(len(embeddings)):
             embedding = torch.from_numpy(embeddings[idx]).cuda()
-            output = model(embedding)
+            output = model.fc(embedding)
             loss = cirterion(output.squeeze().cpu(), torch.from_numpy(y[idx]).cpu())
             losses.append(loss.item())
     idx = len(range(losses))
