@@ -15,10 +15,10 @@ class EmbeddingsDataset(Dataset):
             idx = df.index.tolist()
             selected_idx = train_test_split(idx, test_size=0.5, random_state=random_state)[split_num]
             df = df.loc[selected_idx, :]
-        self.embeddings = torch.from_numpy(df.loc[:, : embeddings_dim - 1].values)
-        self.label = torch.from_numpy(df['label'].values)
-        self.group = torch.from_numpy(df['group'].values)
-        self.place_label = torch.from_numpy(df['place_label'].values)
+        self.embeddings = df.loc[:, : embeddings_dim - 1].values
+        self.label = df['label'].values
+        self.group = df['group'].values
+        self.place_label = df['place_label'].values
 
     def __len__(self):
         return len(self.label)
