@@ -10,11 +10,11 @@ class EmbeddingsDataset(Dataset):
         except ValueError:
             raise(f"Unknown split {split}")
         df = pd.read_csv(df_path)
-        df = df[df.split == split_i]
+        df = df[df.split == split_i].reset_index()
         if split_num != -1:
             idx = df.index.tolist()
             selected_idx = train_test_split(idx, test_size=0.5, random_state=random_state)[split_num]
-            df = df.iloc[selected_idx, :]
+            df = df.iloc[selected_idx, :].reset_index()
         self.embeddings = df.iloc[:, : embeddings_dim - 1].values
         self.label = df['label'].values
         self.group = df['group'].values
