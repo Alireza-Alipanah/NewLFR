@@ -45,6 +45,8 @@ def load_embeddings(args, model, loader):
     p = torch.rand((0))
     with torch.no_grad():
         for idx, (img, batch_y, batch_g, batch_p) in tqdm.tqdm(enumerate(loader)):
+            if idx >= 5:
+                break
             img = img.cuda()
             btach_embeddings = model(img).cpu()
             embeddings = torch.concat((embeddings, btach_embeddings))
@@ -81,6 +83,7 @@ def create_dataframe(embeddings, y, g, p, split):
 
 
 def save_dataframe(args, df):
+    os,makedirs(args.save_path, exist_ok=True)
     df.to_csv(os.path.join(args.save_path, args.save_name))
 
 
