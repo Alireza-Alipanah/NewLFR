@@ -19,7 +19,7 @@ def get_sweep_conf():
                 'value': '/kaggle/input/resnet50-waterbirds-faithful-universe-57/NewLFR/saved_models/resnet50_waterbirds_faithful-universe-57.pth',
             },
             'number_to_pick': {
-                'values': [5] + list(range(10, 171, 10))
+                'values': [5] + list(range(10, 169, 10))
             },
             'C': {
                 'values': [1.0, 0.7, 0.3, 0.1, 0.07, 0.03, 0.01]
