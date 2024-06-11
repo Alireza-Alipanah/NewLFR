@@ -50,7 +50,7 @@ def get_data(args):
 
 if __name__ == '__main__':
     args = get_args()
-    set_seed(args.seed)
+    set_seed(args)
     train_dataloader, val_dataloader, test_dataloader = get_data(args)
     model = get_model(args, train_dataloader.dataset.n_classes)
     model = model.cuda()
