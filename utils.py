@@ -108,7 +108,7 @@ def train_model(
             running_loss += loss.item()
             wandb.log({'train/step_loss': loss.item()})
         running_loss /= len(train_dataloader)
-        group_data = evaluate(train_dataloader, model, classification_func)
+        group_data = evaluate(train_dataloader, model, classification_func, group_proportions)
         log_to_wandb(
             'train',
             {
@@ -172,7 +172,7 @@ def evaluate(
 
 
 def test_model(test_dataloader, model, classification_func, group_proportions, is_start=False):
-    group_data = evaluate(test_dataloader, model, classification_func)
+    group_data = evaluate(test_dataloader, model, classification_func, group_proportions)
     prefix = 'test_start' if is_start else 'test'
     log_to_wandb(prefix, group_data)
     print(
