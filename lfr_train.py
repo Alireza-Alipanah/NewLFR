@@ -5,6 +5,8 @@ import torch
 import tqdm
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.utils import resample
+import pandas as pd
 import wandb
 
 from lfr_data import EmbeddingsDataset, get_loader
@@ -34,6 +36,7 @@ def get_args():
     parser.add_argument('--use_standard_scaler', default=False, help='wether to use standard scaler based on training data', type=bool)
     parser.add_argument('--method', default='NewLFR', help='method to use for training', type=str)
     parser.add_argument('--split_random_state', default=1, help='random state value used for splitting validation in half', type=int)
+    parser.add_argument('--subsample', default=False, help='whether to subsample to have balanced groups', type=bool)
     args = parser.parse_args()
     return args
 
@@ -125,6 +128,16 @@ def get_LFR_data(args, dataset, model):
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
+def balance_data(dataset):
+    balanced_groups = []
+    group_size = dataset.group.value_counts().min()
+    for group in dataset.group.unique():
+        group_df = dataset[dataset.group == group]
+        sampled_group = resample(group_df, replace=False, n_samples=group_size)
+        balanced_groups.append(sampled_group)
+    return pd.concat(balanced_groups)
+
+
 def get_split_for_methods(args, train, val, val1, val2, test):
     # aggregates data for based on the methods
     if args.method == 'DFR':
@@ -170,6 +183,8 @@ if __name__ == '__main__':
     # loading data
     train, val, val1, val2, test = get_datasets(args)
     train, val, test = get_split_for_methods(args, train, val, val1, val2, test) # gets the appropriate data based on method
+    if args.subsample:
+        train = balance_data(train)
     train_embeddings, train_y, train_groups, _ = get_training_data(args, train, model)
     val_embeddings, val_y, val_groups, _ = get_all_data(val)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
