@@ -37,6 +37,7 @@ def get_args():
     parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
     parser.add_argument('--use_standard_scaler', default=False, help='wether to use standard scaler based on training data', type=bool)
     parser.add_argument('--method', default='NewLFR', help='method to use for training', type=str)
+    parser.add_argument('--split_random_state', default=1, help='random state value used for splitting validation in half', type=int)
     args = parser.parse_args()
     return args
 
@@ -63,14 +64,14 @@ def get_datasets(args):
         args.embeddings_dim,
         split='val',
         split_num=0,
-        random_state=args.seed
+        random_state=args.split_random_state
     )
     val2 = EmbeddingsDataset(
         args.embeddings_dir,
         args.embeddings_dim,
         split='val',
         split_num=1,
-        random_state=args.seed
+        random_state=args.split_random_state
     )
     test = EmbeddingsDataset(
         args.embeddings_dir,
@@ -93,10 +94,10 @@ def calaculate_loss_and_prediction(args, dataset, model):
     with torch.no_grad():
         for idx in range(len(embeddings)):
             embedding = torch.from_numpy(embeddings[idx]).float().cuda()
-            output = model.fc(embedding).squeeze().cpu()
+            output = model.fc(embedding).cpu()
             loss = cirterion(output, y_torch[idx].cpu())
             losses.append(loss.item())
-            pred = classiffication_fun(output).numpy()
+            pred = classiffication_fun(output.unsqueeze(0)).numpy()
             preds.append(pred)
     return losses, preds
 
@@ -124,14 +125,14 @@ def get_LFR_data(args, dataset, model):
     misclassified = list(filter(lambda i: preds[i] != y[i], idx))
     chosen_correctly_classified = sorted(correctly_classified, key=lambda i: losses[i])[:number_to_pick]
     chosen_misclassified = sorted(misclassified, key=lambda i: losses[i], reverse=True)[:number_to_pick]
-    chosen_idx = chosen_correctly_classified, chosen_misclassified
+    chosen_idx = chosen_correctly_classified + chosen_misclassified
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
 def get_split_for_methods(args, train, val, val1, val2, test):
     # aggregates data for based on the methods
     if args.method == 'DFR':
-        return val, val, test
+        return val1, val2, test
     elif args.method == 'LFR' or args.method == 'NewLFR':
         return val1, val2, test
     else:
