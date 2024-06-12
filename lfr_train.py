@@ -15,7 +15,8 @@ from utils import (
     log_to_wandb,
     calculate_group_accuracies,
     get_train_group_proportions,
-    load_model_from_state_dict
+    load_model_from_state_dict,
+    get_classification_func
 )
 
 
@@ -34,6 +35,8 @@ def get_args():
     parser.add_argument('--C', help='C regularization', type=float)
     parser.add_argument('--model_path', help='path to the saved model', type=str)
     parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
+    parser.add_argument('--use_standard_scaler', default=False, help='wether to use standard scaler based on training data', type=bool)
+    parser.add_argument('--method', default='NewLFR', help='method to use for training', type=str)
     args = parser.parse_args()
     return args
 
@@ -49,6 +52,11 @@ def get_datasets(args):
         args.embeddings_dir,
         args.embeddings_dim,
         split='train'
+    )
+    val = EmbeddingsDataset(
+        args.embeddings_dir,
+        args.embeddings_dim,
+        split='val'
     )
     val1 = EmbeddingsDataset(
         args.embeddings_dir,
@@ -69,29 +77,76 @@ def get_datasets(args):
         args.embeddings_dim,
         split='test'
     )
-    return train, val1, val2, test
+    return train, val, val1, val2, test
 
 
-def get_training_data(args, dataset, model, number_to_pick):
+def calaculate_loss_and_prediction(args, dataset, model):
     cirterion = get_criterion(args)
     embeddings, y, g, p = get_all_data(dataset)
+    classiffication_fun = get_classification_func(args)
     y_torch = torch.from_numpy(y)
     y_torch = y_torch.long() if args.use_softmax else y_torch.float()
-    if number_to_pick * 2 > len(embeddings):
-        raise Exception('Cannot pick more data points that there exists.')
     model = model.cuda()
     model.eval()
     losses = []
+    preds = []
     with torch.no_grad():
         for idx in range(len(embeddings)):
             embedding = torch.from_numpy(embeddings[idx]).float().cuda()
-            output = model.fc(embedding)
-            loss = cirterion(output.squeeze().cpu(), y_torch[idx].cpu())
+            output = model.fc(embedding).squeeze().cpu()
+            loss = cirterion(output, y_torch[idx].cpu())
             losses.append(loss.item())
+            pred = classiffication_fun(output).numpy()
+            preds.append(pred)
+    return losses, preds
+
+
+def get_newLFR_data(args, dataset, model):
+    number_to_pick = args.number_to_pick
+    embeddings, y, g, p = get_all_data(dataset)
+    if number_to_pick * 2 > len(embeddings):
+        raise Exception('Cannot pick more data points that there exists.')
+    losses, _ = calaculate_loss_and_prediction(args, dataset, model)
     idx = range(len(losses))
-    sorted_losses = sorted(idx, key=lambda i: losses[i], reverse=True)
+    sorted_losses = sorted(idx, key=lambda i: losses[i])
     chosen_idx = sorted_losses[:number_to_pick] + sorted_losses[-number_to_pick:]
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
+
+
+def get_LFR_data(args, dataset, model):
+    number_to_pick = args.number_to_pick
+    embeddings, y, g, p = get_all_data(dataset)
+    if number_to_pick * 2 > len(embeddings):
+        raise Exception('Cannot pick more data points that there exists.')
+    losses, preds = calaculate_loss_and_prediction(args, dataset, model)
+    idx = range(len(losses))
+    correctly_classified = list(filter(lambda i: preds[i] == y[i], idx))
+    misclassified = list(filter(lambda i: preds[i] != y[i], idx))
+    chosen_correctly_classified = sorted(correctly_classified, key=lambda i: losses[i])[:number_to_pick]
+    chosen_misclassified = sorted(misclassified, key=lambda i: losses[i], reverse=True)[:number_to_pick]
+    chosen_idx = chosen_correctly_classified, chosen_misclassified
+    return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
+
+
+def get_split_for_methods(args, train, val, val1, val2, test):
+    # aggregates data for based on the methods
+    if args.method == 'DFR':
+        return val, val, test
+    elif args.method == 'LFR' or args.method == 'NewLFR':
+        return val1, val2, test
+    else:
+        raise NotImplementedError()
+
+
+def get_training_data(args, dataset, model):
+    if args.method == 'DFR':
+        return get_all_data(dataset)
+    elif args.method == 'LFR':
+        return get_LFR_data(args, dataset, model)
+    elif args.method == 'NewLFR':
+        return get_newLFR_data(args, dataset, model)
+    else:
+        raise NotImplementedError()
 
 
 def test_model(pred, y, groups, prefix, group_proportions):
@@ -107,17 +162,22 @@ if __name__ == '__main__':
     args = get_args()
     args.weights = 'None'
     set_seed(args)
+    # model creation
     model = get_model(args, args.n_classes)
     load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
-    train, val1, val2, test = get_datasets(args)
-    train_embeddings, train_y, train_groups, _ = get_training_data(args, val1, model, args.number_to_pick)
-    val_embeddings, val_y, val_groups, _ = get_all_data(val2)
+    # loading data
+    train, val, val1, val2, test = get_datasets(args)
+    train, val, test = get_split_for_methods(args, train, val, val1, val2, test) # gets the appropriate data based on method
+    train_embeddings, train_y, train_groups, _ = get_training_data(args, train, model)
+    val_embeddings, val_y, val_groups, _ = get_all_data(val)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
-    # scaler = StandardScaler()
-    # train_embeddings = scaler.fit_transform(train_embeddings)
-    # val_embeddings = scaler.transform(val_embeddings)
-    # test_embeddings = scaler.transform(test_embeddings)
+    if args.use_standard_scaler:
+        scaler = StandardScaler()
+        train_embeddings = scaler.fit_transform(train_embeddings)
+        val_embeddings = scaler.transform(val_embeddings)
+        test_embeddings = scaler.transform(test_embeddings)
     group_proportions = get_train_group_proportions(train.group)
+    # training
     LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear')
     wandb.init(
         project='LFR on Waterbirds',
