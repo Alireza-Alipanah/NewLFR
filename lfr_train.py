@@ -164,8 +164,11 @@ if __name__ == '__main__':
     args.weights = 'None'
     set_seed(args)
     # model creation
-    model = get_model(args, args.n_classes)
-    load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
+    if args.method != 'DFR': # TODO make better ?
+        model = get_model(args, args.n_classes)
+        load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
+    else:
+        model = None
     # loading data
     train, val, val1, val2, test = get_datasets(args)
     train, val, test = get_split_for_methods(args, train, val, val1, val2, test) # gets the appropriate data based on method
