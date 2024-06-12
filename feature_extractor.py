@@ -23,6 +23,7 @@ def get_args():
     parser.add_argument('--save_path', help='embeddings save path', type=str)
     parser.add_argument('--save_name', help='name of the embeddings file', type=str)
     parser.add_argument('--embedding_size', default=2048, help='size of the embeddings', type=int)
+    parser.add_argument('--augment_validation', default=False, help='whether to augment validation', type=bool)
     args = parser.parse_args()
     return args
 
@@ -32,7 +33,8 @@ def get_dataloaders(args):
         basedir=args.base_dir,
         batch_size=args.batch_size,
         augment_train=False,
-        shuffle_train=False
+        shuffle_train=False,
+        validation_for_train=args.augment_validation
     )
     return train_dataloader, val_dataloader, test_dataloader
 
