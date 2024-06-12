@@ -31,7 +31,7 @@ def get_sweep_conf():
             #     'value': True
             # },
             'seed': {
-                'value': [0, 1, 2, 3, 4]
+                'values': [0, 1, 2, 3, 4]
             }
         }
     }
