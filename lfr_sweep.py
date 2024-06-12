@@ -42,7 +42,7 @@ def main():
     config = get_sweep_conf()
     wandb.sweep(
         config,
-        project=f"LFR on Waterbirds",
+        project=f"DFR on Waterbirds",
     )
 
 
