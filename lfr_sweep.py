@@ -25,14 +25,14 @@ def get_sweep_conf():
                 'values': [1.0, 0.7, 0.3, 0.1, 0.07, 0.03, 0.01]
             },
             'method': {
-                'value': 'NewLFR'
+                'value': 'LFR'
             },
             'use_standard_scaler': {
                 'value': True
             },
-            'seed': {
-                'values': [0, 1, 2, 3, 4]
-            }
+            # 'seed': {
+            #     'values': [0, 1, 2, 3, 4]
+            # }
         }
     }
     return sweep_configuration
