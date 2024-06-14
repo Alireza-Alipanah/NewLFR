@@ -122,8 +122,12 @@ def get_LFR_data(args, dataset, model):
     idx = range(len(losses))
     correctly_classified = list(filter(lambda i: preds[i] == y[i], idx))
     misclassified = list(filter(lambda i: preds[i] != y[i], idx))
-    chosen_correctly_classified = sorted(correctly_classified, key=lambda i: losses[i])[:number_to_pick]
-    chosen_misclassified = sorted(misclassified, key=lambda i: losses[i], reverse=True)[:number_to_pick]
+    # chosen_correctly_classified = sorted(correctly_classified, key=lambda i: losses[i])[:number_to_pick]
+    # chosen_misclassified = sorted(misclassified, key=lambda i: losses[i], reverse=True)[:number_to_pick]
+    C = sorted(correctly_classified, key=lambda i: losses[i])
+    M = sorted(misclassified, key=lambda i: losses[i], reverse=True)
+    chosen_correctly_classified = C[:number_to_pick] + C[-number_to_pick:]
+    chosen_misclassified = M[:number_to_pick] + M[-number_to_pick:]
     chosen_idx = chosen_correctly_classified + chosen_misclassified
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
