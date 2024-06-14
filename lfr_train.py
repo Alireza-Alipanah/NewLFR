@@ -175,7 +175,7 @@ def test_model(pred, y, groups, prefix, group_proportions):
 def DFR(args, train, val, val1, val2, test):
     group_proportions = get_train_group_proportions(train.group)
     train_embeddings, train_y, train_groups, train_place = get_training_data(args, val1, model)
-    val_embeddings, val_y, val_groups, _ = get_all_data(val)
+    val_embeddings, val_y, val_groups, _ = get_all_data(val2)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
     if args.subsample:
         train_embeddings, train_y, train_groups, train_place = \
