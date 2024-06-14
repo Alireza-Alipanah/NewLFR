@@ -213,7 +213,7 @@ def DFR(args, train, val, val1, val2, test):
     print('testing stage 2...')
     train_pred = LRModel.predict(train_embeddings)
     test_model(train_pred, train_y, train_groups, 'train_stage2', group_proportions)
-    val_pred = LRModel.predict(val_embeddings)
+    test_pred = LRModel.predict(test_embeddings)
     test_model(test_pred, test_y, test_groups, 'test_stage2', group_proportions)
 
 
