@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import resample
 import pandas as pd
+import numpy as np
 import wandb
 
 from lfr_data import EmbeddingsDataset, get_loader
@@ -28,14 +29,14 @@ def get_args():
     parser.add_argument('--embeddings_dim', default=2048, help='dimension of embeddings', type=int)
     parser.add_argument('--n_classes', default=2, help='number of classes for pretraining', type=int)
     parser.add_argument('--use_softmax', default=False, help='wether to softmax was used for pretraining', type=bool)
-    parser.add_argument('--seed', default=1, help='seed', type=int)
+    parser.add_argument('--seed', default=None, help='seed', type=int)
     parser.add_argument('--number_to_pick', help='number of low and high loss data to pick from each', type=int)
     parser.add_argument('--C', help='C regularization', type=float)
     parser.add_argument('--model_path', help='path to the saved model', type=str)
     parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
     parser.add_argument('--use_standard_scaler', default=False, help='wether to use standard scaler based on training data', type=bool)
     parser.add_argument('--method', default='NewLFR', help='method to use for training', type=str)
-    parser.add_argument('--split_random_state', default=1, help='random state value used for splitting validation in half', type=int)
+    parser.add_argument('--split_random_state', default=None, help='random state value used for splitting validation in half', type=int)
     parser.add_argument('--subsample', default=False, help='whether to subsample to have balanced groups', type=bool)
     args = parser.parse_args()
     return args
@@ -130,12 +131,12 @@ def get_LFR_data(args, dataset, model):
 
 def balance_data(embeddings, y, groups, place):
     balanced_groups_idx = []
-    unique_groups, group_sizes = np.unique(groups, return_counts=Ture)
+    unique_groups, group_sizes = np.unique(groups, return_counts=True)
     min_group_size = group_sizes.min()
     for group in unique_groups:
-        group_idx = np.where(gorups == group)[0]
+        group_idx = np.where(groups == group)[0]
         sampled_group = resample(group_idx, replace=False, n_samples=min_group_size)
-        balanced_groups.append(sampled_group)
+        balanced_groups_idx.append(sampled_group)
     idx = np.concatenate(balanced_groups_idx)
     return embeddings[idx], y[idx], groups[idx], place[idx]
 
@@ -143,7 +144,8 @@ def balance_data(embeddings, y, groups, place):
 def get_split_for_methods(args, train, val, val1, val2, test):
     # aggregates data for based on the methods
     if args.method == 'DFR':
-        return val1, val2, test
+        # return val1, val2, test
+        return val, test, test
     elif args.method == 'LFR' or args.method == 'NewLFR':
         return val1, val2, test
     else:
@@ -184,18 +186,19 @@ if __name__ == '__main__':
         model = None
     # loading data
     train, val, val1, val2, test = get_datasets(args)
+    group_proportions = get_train_group_proportions(train.group)
     train, val, test = get_split_for_methods(args, train, val, val1, val2, test) # gets the appropriate data based on method
     train_embeddings, train_y, train_groups, train_place = get_training_data(args, train, model)
     val_embeddings, val_y, val_groups, _ = get_all_data(val)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
     if args.subsample:
-        train = balance_data(train_embeddings, train_y, train_groups, train_place)
+        train_embeddings, train_y, train_groups, train_place = \
+            balance_data(train_embeddings, train_y, train_groups, train_place)
     if args.use_standard_scaler:
         scaler = StandardScaler()
         train_embeddings = scaler.fit_transform(train_embeddings)
         val_embeddings = scaler.transform(val_embeddings)
         test_embeddings = scaler.transform(test_embeddings)
-    group_proportions = get_train_group_proportions(train.group)
     # training
     LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear')
     wandb.init(
