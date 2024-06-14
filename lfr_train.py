@@ -208,9 +208,9 @@ def DFR(args, train, val, val1, val2, test):
         test_embeddings = scaler.transform(test_embeddings)
     # training
     LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear')
-    print('training stage 1...')
+    print('training stage 2...')
     LRModel.fit(train_embeddings, train_y)
-    print('testing stage 1...')
+    print('testing stage 2...')
     train_pred = LRModel.predict(train_embeddings)
     test_model(train_pred, train_y, train_groups, 'train_stage2', group_proportions)
     val_pred = LRModel.predict(val_embeddings)
