@@ -263,12 +263,12 @@ def print_weigth_match(loaded_state_dict, model):
                 print('-' * len(f"{new_a[j]:{max_a}}|{model_keys[j]:{max_b}}"))
 
 
-def load_model_from_state_dict(model_path, model=None, remove_fc=True):
+def load_model_from_state_dict(model_path, model=None, remove_fc=True, device='cpu'):
     if model is None:
         model = resnet50(weights=None)
     if remove_fc:
         model.fc = nn.Identity()
-    state_dict = torch.load(model_path)
+    state_dict = torch.load(model_path, map_location=torch.device(device))
     print_weigth_match(state_dict, model)
     model.load_state_dict(state_dict, strict=False)
     return model

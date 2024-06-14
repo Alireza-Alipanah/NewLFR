@@ -222,9 +222,7 @@ if __name__ == '__main__':
     args.weights = 'None'
     set_seed(args)
     # model creation
-    if args.method != 'DFR': # TODO make better ?
-        if not torch.cuda.is_available():
-            raise Exception('cuda not available')
+    if args.method != 'DFR':
         model = get_model(args, args.n_classes)
         load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
     else:
