@@ -87,15 +87,14 @@ def calaculate_loss_and_prediction(args, dataset, model):
     classiffication_fun = get_classification_func(args)
     y_torch = torch.from_numpy(y)
     y_torch = y_torch.long() if args.use_softmax else y_torch.float()
-    model = model.cuda()
     model.eval()
     losses = []
     preds = []
     with torch.no_grad():
         for idx in range(len(embeddings)):
-            embedding = torch.from_numpy(embeddings[idx]).float().cuda()
-            output = model.fc(embedding).cpu()
-            loss = cirterion(output, y_torch[idx].cpu())
+            embedding = torch.from_numpy(embeddings[idx]).float()
+            output = model.fc(embedding)
+            loss = cirterion(output, y_torch[idx])
             losses.append(loss.item())
             pred = classiffication_fun(output.unsqueeze(0)).numpy()
             preds.append(pred)
