@@ -128,14 +128,16 @@ def get_LFR_data(args, dataset, model):
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
-def balance_data(dataset):
-    balanced_groups = []
-    group_size = dataset.group.value_counts().min()
-    for group in dataset.group.unique():
-        group_df = dataset[dataset.group == group]
-        sampled_group = resample(group_df, replace=False, n_samples=group_size)
+def balance_data(embeddings, y, groups, place):
+    balanced_groups_idx = []
+    unique_groups, group_sizes = np.unique(groups, return_counts=Ture)
+    min_group_size = group_sizes.min()
+    for group in unique_groups:
+        group_idx = np.where(gorups == group)[0]
+        sampled_group = resample(group_idx, replace=False, n_samples=min_group_size)
         balanced_groups.append(sampled_group)
-    return pd.concat(balanced_groups)
+    idx = np.concatenate(balanced_groups_idx)
+    return embeddings[idx], y[idx], groups[idx], place[idx]
 
 
 def get_split_for_methods(args, train, val, val1, val2, test):
@@ -183,11 +185,11 @@ if __name__ == '__main__':
     # loading data
     train, val, val1, val2, test = get_datasets(args)
     train, val, test = get_split_for_methods(args, train, val, val1, val2, test) # gets the appropriate data based on method
-    if args.subsample:
-        train = balance_data(train)
-    train_embeddings, train_y, train_groups, _ = get_training_data(args, train, model)
+    train_embeddings, train_y, train_groups, train_place = get_training_data(args, train, model)
     val_embeddings, val_y, val_groups, _ = get_all_data(val)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
+    if args.subsample:
+        train = balance_data(train_embeddings, train_y, train_groups, train_place)
     if args.use_standard_scaler:
         scaler = StandardScaler()
         train_embeddings = scaler.fit_transform(train_embeddings)
