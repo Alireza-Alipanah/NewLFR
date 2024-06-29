@@ -198,7 +198,7 @@ def split_dataset(args, dataset):
 
 def run_method(args, train, val, test, model):
     group_proportions = get_train_group_proportions(train.group)
-    val1, val2 = split_dataset(val)
+    val1, val2 = split_dataset(args, val)
     run_stage( # for model selection
         args=args,
         train=val1,
