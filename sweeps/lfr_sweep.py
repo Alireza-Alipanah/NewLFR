@@ -19,7 +19,7 @@ def get_sweep_conf():
                 'value': '/kaggle/input/resnet50-waterbirds-wild-violet-60/NewLFR/saved_models/resnet50_waterbirds_wild-violet-60.pth',
             },
             'number_to_pick': {
-                'values': [5] + list(range(10, 299, 10))
+                'values': [5] + list(range(10, 70))
             },
             'C': {
                 'values': [1.0, 0.7, 0.3, 0.1, 0.07, 0.03, 0.01]
