@@ -28,7 +28,7 @@ def get_sweep_conf():
                 'value': 'LFR'
             },
             'use_standard_scaler': {
-                'values': [True, False]
+                'values': True
             },
             # 'seed': {
             #     'values': [0, 1, 2, 3, 4]
