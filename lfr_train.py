@@ -192,8 +192,8 @@ def run_stage(
 
 def split_dataset(args, dataset):
     val1_idx, val2_idx = train_test_split(range(len(dataset)), test_size=0.5, random_state=args.split_random_state)
-    val1 = torch.utils.data.Subset(dataset, val1)
-    val2 = torch.utils.data.Subset(dataset, val2)
+    val1 = torch.utils.data.Subset(dataset, val1_idx)
+    val2 = torch.utils.data.Subset(dataset, val2_idx)
     return val1, val2
 
 
