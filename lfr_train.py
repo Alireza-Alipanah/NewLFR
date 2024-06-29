@@ -60,26 +60,12 @@ def get_datasets(args):
         args.embeddings_dim,
         split='val'
     )
-    val1 = EmbeddingsDataset(
-        args.embeddings_dir,
-        args.embeddings_dim,
-        split='val',
-        split_num=0,
-        random_state=args.split_random_state
-    )
-    val2 = EmbeddingsDataset(
-        args.embeddings_dir,
-        args.embeddings_dim,
-        split='val',
-        split_num=1,
-        random_state=args.split_random_state
-    )
     test = EmbeddingsDataset(
         args.embeddings_dir,
         args.embeddings_dim,
         split='test'
     )
-    return train, val, val1, val2, test
+    return train, val, test
 
 
 def calaculate_loss_and_prediction(args, dataset, model):
@@ -147,7 +133,12 @@ def subsample_data(embeddings, y, groups, place):
 
 def get_training_data(args, dataset, model):
     if args.method == 'DFR':
-        return get_all_data(dataset)
+        if args.subsample:
+            train_embeddings, train_y, train_groups, train_place = \
+                subsample_data(train_embeddings, train_y, train_groups, train_place)
+            return train_embeddings, train_y, train_groups, train_place
+        else:
+            return get_all_data(dataset)
     elif args.method == 'LFR':
         return get_LFR_data(args, dataset, model)
     elif args.method == 'NewLFR':
@@ -173,22 +164,15 @@ def run_stage(
     model,
     stage,
     group_proportions,
-    use_valid
 ):
     train_embeddings, train_y, train_groups, train_place = get_training_data(args, train, model)
-    if use_valid:
-        val_embeddings, val_y, val_groups, _ = get_all_data(val)
+    val_embeddings, val_y, val_groups, _ = get_all_data(val)
     test_embeddings, test_y, test_groups, _ = get_all_data(test)
-
-    if args.subsample:
-        train_embeddings, train_y, train_groups, train_place = \
-            subsample_data(train_embeddings, train_y, train_groups, train_place)
             
     if args.use_standard_scaler:
         scaler = StandardScaler()
         train_embeddings = scaler.fit_transform(train_embeddings)
-        if use_valid:
-            val_embeddings = scaler.transform(val_embeddings)
+        val_embeddings = scaler.transform(val_embeddings)
         test_embeddings = scaler.transform(test_embeddings)
         
     LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear')
@@ -199,15 +183,22 @@ def run_stage(
     print(f'testing {stage}...')
     train_pred = LRModel.predict(train_embeddings)
     test_model(train_pred, train_y, train_groups, f'train_{stage}', group_proportions)
-    if use_valid:
-        val_pred = LRModel.predict(val_embeddings)
-        test_model(val_pred, val_y, val_groups, f'validation_{stage}', group_proportions)
+    val_pred = LRModel.predict(val_embeddings)
+    test_model(val_pred, val_y, val_groups, f'validation_{stage}', group_proportions)
     test_pred = LRModel.predict(test_embeddings)
     test_model(test_pred, test_y, test_groups, f'test_{stage}', group_proportions)
 
 
-def run_method(args, train, val, val1, val2, test, model):
+def split_dataset(args, dataset):
+    val1_idx, val2_idx = train_test_split(range(len(dataset)), test_size=0.5, random_state=args.split_random_state)
+    val1 = torch.utils.data.Subset(dataset, val1)
+    val2 = torch.utils.data.Subset(dataset, val2)
+    return val1, val2
+
+
+def run_method(args, train, val, test, model):
     group_proportions = get_train_group_proportions(train.group)
+    val1, val2 = split_dataset(val)
     run_stage( # for model selection
         args=args,
         train=val1,
@@ -216,18 +207,17 @@ def run_method(args, train, val, val1, val2, test, model):
         model=model,
         stage='stage1',
         group_proportions=group_proportions,
-        use_valid=True
     )
-    run_stage( # for retraining on all available data
-        args=args,
-        train=val,
-        val=None,
-        test=test,
-        model=model,
-        stage='stage2',
-        group_proportions=group_proportions,
-        use_valid=False
-    )
+    if args.method == 'DFR':
+        run_stage( # for retraining on all available data
+            args=args,
+            train=val,
+            val=val,
+            test=test,
+            model=model,
+            stage='stage2',
+            group_proportions=group_proportions,
+        )
 
 
 if __name__ == '__main__':
@@ -241,10 +231,10 @@ if __name__ == '__main__':
     else:
         model = None
     # loading data
-    train, val, val1, val2, test = get_datasets(args)
+    train, val, test = get_datasets(args)
     wandb.init(
         project=args.project_name,
         config=vars(args),
     )
-    run_method(args, train, val, val1, val2, test, model)
+    run_method(args, train, val, test, model)
     wandb.finish()
