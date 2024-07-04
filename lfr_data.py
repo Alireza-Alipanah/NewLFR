@@ -3,12 +3,13 @@ import pandas as pd
 
 
 class EmbeddingsDataset(Dataset):
-    def __init__(self, df_path, embeddings_dim, split="train", split_num=-1, random_state=None):
+    def __init__(self, df_path, embeddings_dim, split="train"):
         try:
             split_i = ["train", "val", "test"].index(split)
         except ValueError:
             raise(f"Unknown split {split}")
         df = pd.read_csv(df_path)
+        df = df[df.split == split_i]
         self.embeddings = df.iloc[:, :embeddings_dim].values
         self.label = df['label'].values
         self.group = df['group'].values

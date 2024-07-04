@@ -69,9 +69,8 @@ def get_datasets(args):
     return train, val, test
 
 
-def calaculate_loss_and_prediction(args, dataset, model):
+def calaculate_loss_and_prediction(args, embeddings, y, model):
     cirterion = get_criterion(args)
-    embeddings, y, g, p = get_all_data(dataset)
     classiffication_fun = get_classification_func(args)
     y_torch = torch.from_numpy(y)
     y_torch = y_torch.long() if args.use_softmax else y_torch.float()
@@ -94,7 +93,7 @@ def get_newLFR_data(args, dataset, model):
     embeddings, y, g, p = get_all_data(dataset)
     if number_to_pick * 2 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
-    losses, _ = calaculate_loss_and_prediction(args, dataset, model)
+    losses, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
     idx = range(len(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i])
     chosen_idx = sorted_losses[:number_to_pick] + sorted_losses[-number_to_pick:]
@@ -104,9 +103,9 @@ def get_newLFR_data(args, dataset, model):
 def get_LFR_data(args, dataset, model):
     number_to_pick = args.number_to_pick
     embeddings, y, g, p = get_all_data(dataset)
-    if number_to_pick * 2 > len(embeddings):
+    if number_to_pick * 4 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
-    losses, preds = calaculate_loss_and_prediction(args, dataset, model)
+    losses, preds = calaculate_loss_and_prediction(args, embeddings, y, model)
     idx = range(len(losses))
     correctly_classified = list(filter(lambda i: preds[i] == y[i], idx))
     misclassified = list(filter(lambda i: preds[i] != y[i], idx))
