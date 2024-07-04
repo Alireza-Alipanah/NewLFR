@@ -5,7 +5,7 @@ import wandb
 def get_sweep_conf():
     sweep_configuration = {
         'method': 'grid',
-        'name': f'NewLFR on Waterbirds',
+        'name': f'NewLFRDebugged',
         'program': 'lfr_train.py',
         'description': '',
         'parameters': {
@@ -19,10 +19,10 @@ def get_sweep_conf():
                 'value': '/kaggle/input/resnet50-waterbirds-wild-violet-60/NewLFR/saved_models/resnet50_waterbirds_wild-violet-60.pth',
             },
             'number_to_pick': {
-                'values': [5] + list(range(10, 299, 10))
+                'values': [5] + list(range(10, 71, 5))
             },
             'C': {
-                'values': [1.0, 0.7, 0.3, 0.1, 0.07, 0.03, 0.01]
+                'values': [0.001, 0.01, 0.03, 0.055, 0.07, 0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0, 2.0]
             },
             'method': {
                 'value': 'NewLFR'
