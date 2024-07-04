@@ -5,7 +5,7 @@ import wandb
 def get_sweep_conf():
     sweep_configuration = {
         'method': 'grid',
-        'name': f'LFR on Waterbirds with new splitting',
+        'name': f'LFRDebugged without StandardScaler',
         'program': 'lfr_train.py',
         'description': '',
         'parameters': {
@@ -27,9 +27,9 @@ def get_sweep_conf():
             'method': {
                 'value': 'LFR'
             },
-            'use_standard_scaler': {
-                'value': True
-            },
+            # 'use_standard_scaler': {
+            #     'value': True
+            # },
             # 'seed': {
             #     'values': [0, 1, 2, 3, 4]
             # }
