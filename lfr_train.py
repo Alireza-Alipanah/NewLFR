@@ -119,7 +119,8 @@ def get_LFR_data(args, dataset, model):
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
-def subsample_data(embeddings, y, groups, place):
+def subsample_data(dataset):
+    embeddings, y, groups, place = get_all_data(dataset)
     balanced_groups_idx = []
     unique_groups, group_sizes = np.unique(groups, return_counts=True)
     min_group_size = group_sizes.min()
@@ -135,7 +136,7 @@ def get_training_data(args, dataset, model):
     if args.method == 'DFR':
         if args.subsample:
             train_embeddings, train_y, train_groups, train_place = \
-                subsample_data(train_embeddings, train_y, train_groups, train_place)
+                subsample_data(dataset)
             return train_embeddings, train_y, train_groups, train_place
         else:
             return get_all_data(dataset)
