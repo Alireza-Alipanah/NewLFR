@@ -5,7 +5,7 @@ import wandb
 def get_sweep_conf():
     sweep_configuration = {
         'method': 'grid',
-        'name': f'LFR split according to paper',
+        'name': f'LFR tol iter',
         'program': 'lfr_train.py',
         'description': '',
         'parameters': {
