@@ -100,6 +100,12 @@ def get_newLFR_data(args, dataset, model):
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
+def get_at_most_n_low_and_high_samples_without_replacement(n, ls):
+    lowest = ls[:n]
+    highest = ls[n:][-n:]
+    return highest + lowest
+
+
 def get_LFR_data(args, dataset, model):
     number_to_pick = args.number_to_pick
     embeddings, y, g, p = get_all_data(dataset)
@@ -113,8 +119,10 @@ def get_LFR_data(args, dataset, model):
     # chosen_misclassified = sorted(misclassified, key=lambda i: losses[i], reverse=True)[:number_to_pick]
     C = sorted(correctly_classified, key=lambda i: losses[i])
     M = sorted(misclassified, key=lambda i: losses[i], reverse=True)
-    chosen_correctly_classified = C[:number_to_pick] + C[-number_to_pick:]
-    chosen_misclassified = M[:number_to_pick] + M[-number_to_pick:]
+    # chosen_correctly_classified = C[:number_to_pick] + C[-number_to_pick:]
+    # chosen_misclassified = M[:number_to_pick] + M[-number_to_pick:]
+    chosen_correctly_classified = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, correctly_classified)
+    chosen_misclassified = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, misclassified)
     chosen_idx = chosen_correctly_classified + chosen_misclassified
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
