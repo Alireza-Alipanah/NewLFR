@@ -176,7 +176,7 @@ def run_stage(
         val_embeddings = scaler.transform(val_embeddings)
         test_embeddings = scaler.transform(test_embeddings)
         
-    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear')
+    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear', tol=1e-20, max_iter=int(1e4))
 
     print(f'training {stage}...')
     LRModel.fit(train_embeddings, train_y)
@@ -198,33 +198,12 @@ def split_dataset(args, dataset, test_size=0.5):
 
 
 def run_method(args, train, val, test, model):
-    # group_proportions = get_train_group_proportions(train.group)
-    # val1, val2 = split_dataset(args, val)
-    # run_stage( # for model selection
-    #     args=args,
-    #     train=val1,
-    #     val=val2,
-    #     test=test,
-    #     model=model,
-    #     stage='stage1',
-    #     group_proportions=group_proportions,
-    # )
-    # if args.method == 'DFR':
-    #     run_stage( # for retraining on all available data
-    #         args=args,
-    #         train=val,
-    #         val=val,
-    #         test=test,
-    #         model=model,
-    #         stage='stage2',
-    #         group_proportions=group_proportions,
-    #     )
     group_proportions = get_train_group_proportions(train.group)
-    _, train = split_dataset(args, train, test_size=0.25)
+    val1, val2 = split_dataset(args, val)
     run_stage( # for model selection
         args=args,
-        train=train,
-        val=val,
+        train=val1,
+        val=val2,
         test=test,
         model=model,
         stage='stage1',
