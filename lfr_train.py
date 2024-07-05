@@ -96,7 +96,8 @@ def get_newLFR_data(args, dataset, model):
     losses, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
     idx = range(len(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i])
-    chosen_idx = sorted_losses[:number_to_pick] + sorted_losses[-number_to_pick:]
+    # chosen_idx = sorted_losses[:number_to_pick] + sorted_losses[-number_to_pick:]
+    chosen_idx = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, sorted_losses)
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
@@ -115,12 +116,8 @@ def get_LFR_data(args, dataset, model):
     idx = range(len(losses))
     correctly_classified = list(filter(lambda i: preds[i] == y[i], idx))
     misclassified = list(filter(lambda i: preds[i] != y[i], idx))
-    # chosen_correctly_classified = sorted(correctly_classified, key=lambda i: losses[i])[:number_to_pick]
-    # chosen_misclassified = sorted(misclassified, key=lambda i: losses[i], reverse=True)[:number_to_pick]
     C = sorted(correctly_classified, key=lambda i: losses[i])
     M = sorted(misclassified, key=lambda i: losses[i], reverse=True)
-    # chosen_correctly_classified = C[:number_to_pick] + C[-number_to_pick:]
-    # chosen_misclassified = M[:number_to_pick] + M[-number_to_pick:]
     chosen_correctly_classified = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, correctly_classified)
     chosen_misclassified = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, misclassified)
     chosen_idx = chosen_correctly_classified + chosen_misclassified
