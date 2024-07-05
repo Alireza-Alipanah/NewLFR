@@ -96,7 +96,6 @@ def get_newLFR_data(args, dataset, model):
     losses, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
     idx = range(len(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i])
-    # chosen_idx = sorted_losses[:number_to_pick] + sorted_losses[-number_to_pick:]
     chosen_idx = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, sorted_losses)
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
