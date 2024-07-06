@@ -242,6 +242,12 @@ def get_classification_func(args, sigmoid_threshold=0.5):
         return lambda x: F.sigmoid(x.squeeze()) >= sigmoid_threshold
 
 
+def get_logits_retreiver_func(args):
+    if args.use_softmax:
+        return lambda x: F.softmax(x, dim=1)[:, 1].squeeze()
+    else:
+        return lambda x: F.sigmoid(x.squeeze())
+
 def print_weigth_match(loaded_state_dict, model):
     loaded_keys = ['loaded'] + list(loaded_state_dict.keys())
     model_keys = ['model'] + list(model.state_dict().keys())

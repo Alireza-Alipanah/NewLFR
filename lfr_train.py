@@ -9,6 +9,7 @@ from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
+from spuco.group_inference import EIIL
 import wandb
 
 from lfr_data import EmbeddingsDataset, get_loader
@@ -20,7 +21,8 @@ from utils import (
     calculate_group_accuracies,
     get_train_group_proportions,
     load_model_from_state_dict,
-    get_classification_func
+    get_classification_func,
+    get_logits_retreiver_func
 )
 
 
@@ -40,6 +42,13 @@ def get_args():
     parser.add_argument('--split_random_state', default=None, help='random state value used for splitting validation in half', type=int)
     parser.add_argument('--subsample', default=False, help='whether to subsample to have balanced groups', type=bool)
     parser.add_argument('--project_name', default='LFR on Waterbirds', help='wandb project name', type=str)
+
+    # EIIL
+    parser.add_argument('--use_eiil', default=False, help='wether to use eiil', type=bool)
+    parser.add_argument('--eiil_lr', default=0.01, help='lerning rate used by eiil', type=float)
+    parser.add_argument('--eiil_steps', default=20000, help='number of steps used by eiil', type=int)
+    parser.add_argument('--eiil_batch_size', default=128, help='batch size used by eiil', type=int)
+
     args = parser.parse_args()
     return args
 
@@ -72,20 +81,23 @@ def get_datasets(args):
 def calaculate_loss_and_prediction(args, embeddings, y, model):
     cirterion = get_criterion(args)
     classiffication_fun = get_classification_func(args)
+    logits_func = get_logits_retreiver_func(args)
     y_torch = torch.from_numpy(y)
     y_torch = y_torch.long() if args.use_softmax else y_torch.float()
     model.eval()
     losses = []
     preds = []
+    logits = []
     with torch.no_grad():
         for idx in range(len(embeddings)):
             embedding = torch.from_numpy(embeddings[idx]).float()
-            output = model.fc(embedding)
-            loss = cirterion(output, y_torch[idx])
+            logit = model.fc(embedding)
+            loss = cirterion(logit, y_torch[idx])
             losses.append(loss.item())
-            pred = classiffication_fun(output.unsqueeze(0)).numpy()
+            pred = classiffication_fun(logit.unsqueeze(0)).numpy()
             preds.append(pred)
-    return losses, preds
+            logits.append(logits_func(logit.unsqueeze(0)))
+    return losses, preds, logits
 
 
 def get_newLFR_data(args, dataset, model):
@@ -93,7 +105,7 @@ def get_newLFR_data(args, dataset, model):
     embeddings, y, g, p = get_all_data(dataset)
     if number_to_pick * 2 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
-    losses, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
+    losses, _, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
     idx = range(len(losses))
     sorted_losses = sorted(idx, key=lambda i: losses[i])
     chosen_idx = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, sorted_losses)
@@ -111,7 +123,7 @@ def get_LFR_data(args, dataset, model):
     embeddings, y, g, p = get_all_data(dataset)
     if number_to_pick * 4 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
-    losses, preds = calaculate_loss_and_prediction(args, embeddings, y, model)
+    losses, preds, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
     idx = range(len(losses))
     correctly_classified = list(filter(lambda i: preds[i] == y[i], idx))
     misclassified = list(filter(lambda i: preds[i] != y[i], idx))
@@ -161,6 +173,7 @@ def test_model(pred, y, groups, prefix, group_proportions):
     )
 
 
+
 def run_stage(
     args,
     train,
@@ -201,6 +214,20 @@ def split_dataset(args, dataset, test_size=0.5):
     return val1, val2
 
 
+def get_environments(args, embeddings, y, model):
+    _, _, logits = calaculate_loss_and_prediction(args, embeddings, y, model)
+    logits = torch.FloatTensor(logits)
+    class_labels = torch.LongTensor(y)
+    eiil = EIIL(
+        logits=logits,
+        class_labels=class_labels,
+        num_steps=args.eiil_steps,
+        lr=args.eiil_lr,
+        verbose=True
+    )
+    eiil.infer_groups()
+
+
 def run_method(args, train, val, test, model):
     group_proportions = get_train_group_proportions(train.group)
     val1, val2 = split_dataset(args, val)
@@ -230,13 +257,16 @@ if __name__ == '__main__':
     args.weights = 'None'
     set_seed(args)
     # model creation
-    if args.method != 'DFR':
+    if args.method != 'DFR' or args.use_eiil:
         model = get_model(args, args.n_classes)
         load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
     else:
         model = None
     # loading data
     train, val, test = get_datasets(args)
+    embeddings, y, _, _ = get_all_data(val)
+    envs = get_environments(args, embeddings, y, model)
+    exit()
     wandb.init(
         project=args.project_name,
         config=vars(args),
