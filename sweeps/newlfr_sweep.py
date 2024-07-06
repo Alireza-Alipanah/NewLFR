@@ -5,7 +5,7 @@ import wandb
 def get_sweep_conf():
     sweep_configuration = {
         'method': 'grid',
-        'name': f'NewLFR new with EIIL ENV model selection',
+        'name': f'NewLFR with EIIL ENV model selection',
         'program': 'lfr_train.py',
         'description': '',
         'parameters': {
