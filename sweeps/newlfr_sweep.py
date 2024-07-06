@@ -5,7 +5,7 @@ import wandb
 def get_sweep_conf():
     sweep_configuration = {
         'method': 'grid',
-        'name': f'NewLFR new sample choosing',
+        'name': f'NewLFR new with EIIL ENV model selection',
         'program': 'lfr_train.py',
         'description': '',
         'parameters': {
@@ -30,6 +30,9 @@ def get_sweep_conf():
             'use_standard_scaler': {
                 'value': True
             },
+            'eiil': {
+                'value': True
+            }
             # 'seed': {
             #     'values': [0, 1, 2, 3, 4]
             # }
