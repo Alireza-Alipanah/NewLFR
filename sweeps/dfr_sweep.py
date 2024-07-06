@@ -30,6 +30,9 @@ def get_sweep_conf():
             'subsample': {
                 'value': True
             },
+            'eiil': {
+                'value': True
+            },
             # 'seed': {
             #     'values': [0, 1, 2, 3, 4]
             # }
