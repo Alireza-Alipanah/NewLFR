@@ -131,19 +131,28 @@ def get_train_group_proportions(array):
 
 def calculate_group_accuracies(pred, y, groups, proportions_dict):
     group_data = dict()
-    worst_group_acc = float('inf')
     mean_acc = 0
     for group in np.unique(groups):
         group_pred = pred[groups == group]
         group_y = y[groups == group]
         group_accuracy = accuracy_score(group_y, group_pred)
-        worst_group_acc = min(group_accuracy, worst_group_acc)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
         mean_acc += group_accuracy * proportions_dict[group] # calculated according to JTT paper
-    group_data['worst_group_accuracy'] = worst_group_acc
+    group_data['worst_group_accuracy'] = min(group_data.values())
     group_data['accuracy'] = accuracy_score(y, pred)
     group_data['mean_accuracy'] = mean_acc
     return group_data
+
+
+def calculate_env_accuracies(pred, y, envs):
+    env_data = dict()
+    for i, env in enumerate(envs):
+        env_pred = pred[env]
+        env_y = y[env]
+        env_accuracy = accuracy_score(env_y, env_pred)
+        env_data[f'env_{i}_accuracy'] = env_accuracy
+    env_data['worst_env_accuracy'] = min(env_data.values())
+    return env_data
 
 
 def evaluate(
@@ -241,12 +250,6 @@ def get_classification_func(args, sigmoid_threshold=0.5):
     else:
         return lambda x: F.sigmoid(x.squeeze()) >= sigmoid_threshold
 
-
-def get_logits_retreiver_func(args):
-    if args.use_softmax:
-        return lambda x: F.softmax(x, dim=1)[:, 1].squeeze()
-    else:
-        return lambda x: F.sigmoid(x.squeeze())
 
 def print_weigth_match(loaded_state_dict, model):
     loaded_keys = ['loaded'] + list(loaded_state_dict.keys())

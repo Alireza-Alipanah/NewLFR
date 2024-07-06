@@ -22,7 +22,7 @@ from utils import (
     get_train_group_proportions,
     load_model_from_state_dict,
     get_classification_func,
-    get_logits_retreiver_func
+    calculate_env_accuracies
 )
 
 
@@ -44,7 +44,7 @@ def get_args():
     parser.add_argument('--project_name', default='LFR on Waterbirds', help='wandb project name', type=str)
 
     # EIIL
-    parser.add_argument('--use_eiil', default=False, help='wether to use eiil', type=bool)
+    parser.add_argument('--eiil', default=False, help='wether to use eiil', type=bool)
     parser.add_argument('--eiil_lr', default=0.01, help='lerning rate used by eiil', type=float)
     parser.add_argument('--eiil_steps', default=20000, help='number of steps used by eiil', type=int)
     parser.add_argument('--eiil_batch_size', default=128, help='batch size used by eiil', type=int)
@@ -81,7 +81,6 @@ def get_datasets(args):
 def calaculate_loss_and_prediction(args, embeddings, y, model):
     cirterion = get_criterion(args)
     classiffication_fun = get_classification_func(args)
-    logits_func = get_logits_retreiver_func(args)
     y_torch = torch.from_numpy(y)
     y_torch = y_torch.long() if args.use_softmax else y_torch.float()
     model.eval()
@@ -96,7 +95,7 @@ def calaculate_loss_and_prediction(args, embeddings, y, model):
             losses.append(loss.item())
             pred = classiffication_fun(logit.unsqueeze(0)).numpy()
             preds.append(pred)
-            logits.append(logits_func(logit.unsqueeze(0)))
+            logits.append(logit)
     return losses, preds, logits
 
 
@@ -164,12 +163,14 @@ def get_training_data(args, dataset, model):
         raise NotImplementedError()
 
 
-def test_model(pred, y, groups, prefix, group_proportions):
+def test_model(pred, y, groups, prefix, group_proportions, envs=None):
     group_data = calculate_group_accuracies(pred, y, groups, group_proportions)
-    log_to_wandb(prefix, group_data)
+    env_data = calculate_env_accuracies(pred, y, envs) if envs is not None else {}
+    data = {**group_data, **env_data}
+    log_to_wandb(prefix, data)
     print(
         f'{prefix} metrics:\n\t' + \
-        '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
+        '\n\t'.join([f'{key}: {value}' for key, value in data.items()])
     )
 
 
@@ -202,7 +203,8 @@ def run_stage(
     train_pred = LRModel.predict(train_embeddings)
     test_model(train_pred, train_y, train_groups, f'train_{stage}', group_proportions)
     val_pred = LRModel.predict(val_embeddings)
-    test_model(val_pred, val_y, val_groups, f'validation_{stage}', group_proportions)
+    val_envs = get_environments(args, val_embeddings, val_y, model)
+    test_model(val_pred, val_y, val_groups, f'validation_{stage}', group_proportions, val_envs)
     test_pred = LRModel.predict(test_embeddings)
     test_model(test_pred, test_y, test_groups, f'test_{stage}', group_proportions)
 
@@ -214,18 +216,31 @@ def split_dataset(args, dataset, test_size=0.5):
     return val1, val2
 
 
-def get_environments(args, embeddings, y, model):
-    _, _, logits = calaculate_loss_and_prediction(args, embeddings, y, model)
-    logits = torch.FloatTensor(logits)
-    class_labels = torch.LongTensor(y)
+def infer_groups_using_eiil(logits, lables, lr, stpes):
     eiil = EIIL(
         logits=logits,
-        class_labels=class_labels,
-        num_steps=args.eiil_steps,
-        lr=args.eiil_lr,
-        verbose=True
+        class_labels=lables,
+        lr=lr,
+        num_steps=stpes
     )
-    eiil.infer_groups()
+    inferred_groups = eiil.infer_groups()
+    return inferred_groups
+
+
+def get_environments(args, embeddings, y, model):
+    if not args.eiil:
+        return None
+    _, _, logits = calaculate_loss_and_prediction(args, embeddings, y, model)
+    logits = torch.concat(list(map(lambda x: x.unsqueeze(0), logits)))
+    class_labels = y
+    inferred_groups = infer_groups_using_eiil(logits, class_labels, args.eiil_lr, args.eiil_steps)
+    groups = []
+    for group in inferred_groups.values():
+        group_logits = logits[group]
+        group_class_labels = y[group]
+        inferred_groups = infer_groups_using_eiil(group_logits, group_class_labels, args.eiil_lr, args.eiil_steps)
+        groups.extend([*inferred_groups.values()])
+    return groups
 
 
 def run_method(args, train, val, test, model):
@@ -240,16 +255,6 @@ def run_method(args, train, val, test, model):
         stage='stage1',
         group_proportions=group_proportions,
     )
-    if args.method == 'DFR':
-        run_stage( # for retraining on all available data
-            args=args,
-            train=val,
-            val=val,
-            test=test,
-            model=model,
-            stage='stage2',
-            group_proportions=group_proportions,
-        )
 
 
 if __name__ == '__main__':
@@ -257,16 +262,13 @@ if __name__ == '__main__':
     args.weights = 'None'
     set_seed(args)
     # model creation
-    if args.method != 'DFR' or args.use_eiil:
+    if args.method != 'DFR' or args.eiil:
         model = get_model(args, args.n_classes)
         load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
     else:
         model = None
     # loading data
     train, val, test = get_datasets(args)
-    embeddings, y, _, _ = get_all_data(val)
-    envs = get_environments(args, embeddings, y, model)
-    exit()
     wandb.init(
         project=args.project_name,
         config=vars(args),
