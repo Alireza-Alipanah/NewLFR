@@ -227,7 +227,6 @@ def infer_groups_using_eiil(logits, lables, lr, stpes):
         lr=lr,
         num_steps=stpes,
         device=DEVICE,
-        verbose=True
     )
     inferred_groups = eiil.infer_groups()
     return inferred_groups
