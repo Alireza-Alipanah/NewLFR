@@ -1,5 +1,6 @@
 import argparse
 import os
+import itertools
 
 import torch
 import tqdm
@@ -24,6 +25,9 @@ from utils import (
     get_classification_func,
     calculate_env_accuracies
 )
+
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
 def get_args():
@@ -221,7 +225,9 @@ def infer_groups_using_eiil(logits, lables, lr, stpes):
         logits=logits,
         class_labels=lables,
         lr=lr,
-        num_steps=stpes
+        num_steps=stpes,
+        device=DEVICE,
+        verbose=True
     )
     inferred_groups = eiil.infer_groups()
     return inferred_groups
@@ -235,11 +241,11 @@ def get_environments(args, embeddings, y, model):
     class_labels = y
     inferred_groups = infer_groups_using_eiil(logits, class_labels, args.eiil_lr, args.eiil_steps)
     groups = []
-    for group in inferred_groups.values():
-        group_logits = logits[group]
-        group_class_labels = y[group]
-        inferred_groups = infer_groups_using_eiil(group_logits, group_class_labels, args.eiil_lr, args.eiil_steps)
-        groups.extend([*inferred_groups.values()])
+    unqiue_labels = np.unique(y)
+    for inferred_group in inferred_groups.values():
+        for label in unqiue_labels:
+            group = list(filter(lambda x: y[x] == label, inferred_group))
+            groups.append(group)
     return groups
 
 
