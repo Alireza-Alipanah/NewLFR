@@ -5,7 +5,7 @@ import wandb
 def get_sweep_conf():
     sweep_configuration = {
         'method': 'grid',
-        'name': f'DFR on Waterbirds',
+        'name': f'DFR with EIIL ENV model selection',
         'program': 'lfr_train.py',
         'description': '',
         'parameters': {
