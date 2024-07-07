@@ -110,8 +110,24 @@ def get_newLFR_data(args, dataset, model):
         raise Exception('Cannot pick more data points that there exists.')
     losses, _, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
     idx = range(len(losses))
-    sorted_losses = sorted(idx, key=lambda i: losses[i])
-    chosen_idx = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, sorted_losses)
+    sorted_losses_idx = sorted(idx, key=lambda i: losses[i])
+    chosen_idx = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, sorted_losses_idx)
+    return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
+
+
+def get_evals_data(args, dataset, model):
+    number_to_pick = args.number_to_pick
+    embeddings, y, g, p = get_all_data(dataset)
+    if number_to_pick * 2 > len(embeddings):
+        raise Exception('Cannot pick more data points that there exists.')
+    losses, _, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
+    idx = list(zip(range(len(losses)), y))
+    sorted_losses_idx = sorted(idx, key=lambda i: losses[i[0]])
+    chosen_idx = []
+    for label in np.unique(y):
+        labels_idx = list(filter(lambda x: x[1] == label, sorted_losses_idx))
+        labels_idx = list(zip(*labels_idx))[0]
+        chosen_idx.extend(get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, labels_idx))
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
@@ -163,6 +179,8 @@ def get_training_data(args, dataset, model):
         return get_LFR_data(args, dataset, model)
     elif args.method == 'NewLFR':
         return get_newLFR_data(args, dataset, model)
+    elif args.method == 'EVaLS':
+        return get_evals_data(args, dataset, model)
     else:
         raise NotImplementedError()
 
@@ -198,7 +216,7 @@ def run_stage(
         val_embeddings = scaler.transform(val_embeddings)
         test_embeddings = scaler.transform(test_embeddings)
         
-    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear', tol=1e-20, max_iter=int(1e5))
+    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear', tol=1e-20, max_iter=int(1e6))
 
     print(f'training {stage}...')
     LRModel.fit(train_embeddings, train_y)
