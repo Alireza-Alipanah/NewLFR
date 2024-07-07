@@ -198,7 +198,7 @@ def run_stage(
         val_embeddings = scaler.transform(val_embeddings)
         test_embeddings = scaler.transform(test_embeddings)
         
-    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear', tol=1e-20, max_iter=int(1e4))
+    LRModel = LogisticRegression(random_state=args.seed, C=args.C, penalty='l1', solver='liblinear', tol=1e-20, max_iter=int(1e5))
 
     print(f'training {stage}...')
     LRModel.fit(train_embeddings, train_y)
