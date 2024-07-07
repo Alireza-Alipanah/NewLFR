@@ -19,12 +19,12 @@ def get_sweep_conf():
                 'value': '/kaggle/input/resnet50-waterbirds-wild-violet-60/NewLFR/saved_models/resnet50_waterbirds_wild-violet-60.pth',
             },
             'number_to_pick': {
-                'values': [5] + list(range(10, 141, 5))
-                # 'values': [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+                # 'values': [5] + list(range(10, 141, 5))
+                'values': [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
             },
             'C': {
-                'values': [0.001, 0.01, 0.03, 0.055, 0.07, 0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0, 2.0]
-                # 'values': [1.0, 0.7, 0.3, 0.1, 0.07, 0.03, 0.01]
+                # 'values': [0.001, 0.01, 0.03, 0.055, 0.07, 0.1, 0.2, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0, 2.0]
+                'values': [1.0, 0.7, 0.3, 0.1, 0.07, 0.03, 0.01]
             },
             'method': {
                 'value': 'NewLFR'
@@ -35,9 +35,9 @@ def get_sweep_conf():
             'eiil': {
                 'value': True
             },
-            # 'seed': {
-            #     'values': [0, 1, 2, 3, 4]
-            # }
+            'seed': {
+                'values': [0, 1, 2, 3, 4]
+            }
         }
     }
     return sweep_configuration
