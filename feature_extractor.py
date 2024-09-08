@@ -20,10 +20,12 @@ def get_args():
     parser.add_argument('--batch_size', default=128, help='data loader batch size', type=int)
     parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
     parser.add_argument('--model_path', help='path to the saved model', type=str)
+    parser.add_argument('--model_complete', default=False, help='wether the model is saved alognside the state dict', type=bool)
     parser.add_argument('--save_path', help='embeddings save path', type=str)
     parser.add_argument('--save_name', help='name of the embeddings file', type=str)
     parser.add_argument('--embedding_size', default=2048, help='size of the embeddings', type=int)
     parser.add_argument('--augment_validation', default=False, help='whether to augment validation', type=bool)
+    parser.add_argument('--alternative_format', default=False, help='wheter to use the alternative format of dataset in which images are split in folders', type=bool)
     args = parser.parse_args()
     return args
 
@@ -89,7 +91,10 @@ def save_dataframe(args, df):
 
 if __name__ == '__main__':
     args = get_args()
-    model = load_model_from_state_dict(args.model_path)
+    if model_complete:
+        model = load_model(args.model_path, remove_fc=False, device=DEVICE)
+    else:
+        model = load_model_from_state_dict(args.model_path)
     model.fc = nn.Identity()
     model.cuda()
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(args)

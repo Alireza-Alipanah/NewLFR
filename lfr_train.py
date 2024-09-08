@@ -22,6 +22,7 @@ from utils import (
     calculate_group_accuracies,
     get_train_group_proportions,
     load_model_from_state_dict,
+    load_model,
     get_classification_func,
     calculate_env_accuracies
 )
@@ -40,6 +41,7 @@ def get_args():
     parser.add_argument('--number_to_pick', help='number of low and high loss data to pick from each', type=int)
     parser.add_argument('--C', help='C regularization', type=float)
     parser.add_argument('--model_path', help='path to the saved model', type=str)
+    parser.add_argument('--model_complete', default=False, help='wether the model is saved alognside the state dict', type=bool)
     parser.add_argument('--model', default='ResNet50', help='model to train', type=str)
     parser.add_argument('--use_standard_scaler', default=False, help='wether to use standard scaler based on training data', type=bool)
     parser.add_argument('--method', default='NewLFR', help='method to use for training', type=str)
@@ -286,8 +288,11 @@ if __name__ == '__main__':
     set_seed(args)
     # model creation
     if args.method != 'DFR' or args.eiil:
-        model = get_model(args, args.n_classes)
-        load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
+        if model_complete:
+            model = load_model(args.model_path, remove_fc=False, device=DEVICE)
+        else:
+            model = get_model(args, args.n_classes)
+            load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
     else:
         model = None
     # loading data

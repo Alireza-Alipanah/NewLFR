@@ -28,7 +28,8 @@ def load_data(
     target_resolution=(224, 224),
     validation_for_train=False,
     augment_train=True,
-    shuffle_train=True
+    shuffle_train=True,
+    alternative_format=False
 ):
     train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=augment_train)
     val_transform = get_transform_cub(target_resolution=target_resolution, train=validation_for_train, augment_data=True) # TODO augment or not ?
@@ -37,17 +38,20 @@ def load_data(
     train_dataset = WaterBirdsDataset(
         basedir=basedir,
         split='train',
-        transform=train_transform
+        transform=train_transform,
+        alternative_format=alternative_format
         )
     val_dataset = WaterBirdsDataset(
         basedir=basedir,
         split='val',
-        transform=val_transform
+        transform=val_transform,
+        alternative_format=alternative_format
         )
     test_dataset = WaterBirdsDataset(
         basedir=basedir,
         split='test',
-        transform=test_transform
+        transform=test_transform,
+        alternative_format=alternative_format
         )
 
     train_dataloader = get_loader(
@@ -280,4 +284,12 @@ def load_model_from_state_dict(model_path, model=None, remove_fc=True, device='c
     state_dict = torch.load(model_path, map_location=torch.device(device))
     print_weigth_match(state_dict, model)
     model.load_state_dict(state_dict, strict=False)
+    return model
+
+
+def load_model(path, remove_fc=False, device='cpu'):
+    # loads a pytorch model that was saved as a whole
+    model = torch.load(model_path, map_location=torch.device(device))
+    if remove_fc:
+        model.fc = nn.Identity()
     return model

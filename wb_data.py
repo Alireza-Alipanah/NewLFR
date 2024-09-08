@@ -14,16 +14,20 @@ from torch.utils.data.sampler import WeightedRandomSampler
 
 
 class WaterBirdsDataset(Dataset):
-    def __init__(self, basedir, split="train", transform=None):
+    def __init__(self, basedir, split="train", transform=None, alternative_format=False):
         try:
             split_i = ["train", "val", "test"].index(split)
         except ValueError:
             raise(f"Unknown split {split}")
+        if alternative_format:
+            basedir = os.path.join(basedir, split)
+            self.basedir = os.path.join(basedir, 'combined')
+        else:
+            self.basedir = basedir
         metadata_df = pd.read_csv(os.path.join(basedir, "metadata.csv"))
         print(len(metadata_df))
         self.metadata_df = metadata_df[metadata_df["split"] == split_i]
         print(len(self.metadata_df))
-        self.basedir = basedir
         self.transform = transform
         self.y_array = self.metadata_df['y'].values
         self.p_array = self.metadata_df['place'].values
