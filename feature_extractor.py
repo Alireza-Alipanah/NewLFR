@@ -36,7 +36,8 @@ def get_dataloaders(args):
         batch_size=args.batch_size,
         augment_train=False,
         shuffle_train=False,
-        validation_for_train=args.augment_validation
+        validation_for_train=args.augment_validation,
+        alternative_format=args.alternative_format
     )
     return train_dataloader, val_dataloader, test_dataloader
 
