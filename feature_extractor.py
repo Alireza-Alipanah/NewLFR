@@ -91,7 +91,7 @@ def save_dataframe(args, df):
 
 if __name__ == '__main__':
     args = get_args()
-    if model_complete:
+    if args.model_complete:
         model = load_model(args.model_path, remove_fc=False, device=DEVICE)
     else:
         model = load_model_from_state_dict(args.model_path)

@@ -288,7 +288,7 @@ if __name__ == '__main__':
     set_seed(args)
     # model creation
     if args.method != 'DFR' or args.eiil:
-        if model_complete:
+        if args.model_complete:
             model = load_model(args.model_path, remove_fc=False, device=DEVICE)
         else:
             model = get_model(args, args.n_classes)
