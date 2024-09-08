@@ -92,7 +92,7 @@ def save_dataframe(args, df):
 if __name__ == '__main__':
     args = get_args()
     if args.model_complete:
-        model = load_model(args.model_path, remove_fc=False, device=DEVICE)
+        model = load_model(args.model_path, remove_fc=False)
     else:
         model = load_model_from_state_dict(args.model_path)
     model.fc = nn.Identity()
