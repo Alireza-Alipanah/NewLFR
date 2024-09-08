@@ -7,7 +7,7 @@ from torchvision.models import resnet50
 import pandas as pd
 import tqdm
 
-from utils import load_data, load_model_from_state_dict
+from utils import load_data, load_model_from_state_dict, load_model
 
 
 if not torch.cuda.is_available():
