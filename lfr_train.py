@@ -289,7 +289,7 @@ if __name__ == '__main__':
     # model creation
     if args.method != 'DFR' or args.eiil:
         if args.model_complete:
-            model = load_model(args.model_path, remove_fc=False, device=DEVICE)
+            model = load_model(args.model_path, remove_fc=False)
         else:
             model = get_model(args, args.n_classes)
             load_model_from_state_dict(args.model_path, model=model, remove_fc=False)
