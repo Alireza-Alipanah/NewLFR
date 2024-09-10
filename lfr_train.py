@@ -139,6 +139,7 @@ def get_at_most_n_low_and_high_samples_without_replacement(n, ls):
     return highest + lowest
 
 
+# TODO Fix this
 def get_LFR_data(args, dataset, model):
     number_to_pick = args.number_to_pick
     embeddings, y, g, p = get_all_data(dataset)
