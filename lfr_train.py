@@ -148,7 +148,7 @@ def get_LFR_data(args, dataset, model):
     chosen_idx = []
     idx = list(zip(range(len(losses)), y))
     for label in np.unique(y):
-        labels_idx = list(filter(lambda x: x[1] == label, sorted_losses_idx))
+        labels_idx = list(filter(lambda x: x[1] == label, idx))
         labels_idx = list(zip(*labels_idx))[0]
         correctly_classified = list(filter(lambda i: preds[i] == y[i], labels_idx))
         misclassified = list(filter(lambda i: preds[i] != y[i], labels_idx))
