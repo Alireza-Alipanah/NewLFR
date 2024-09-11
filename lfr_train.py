@@ -139,21 +139,22 @@ def get_at_most_n_low_and_high_samples_without_replacement(n, ls):
     return highest + lowest
 
 
-# TODO Fix this
 def get_LFR_data(args, dataset, model):
     number_to_pick = args.number_to_pick
     embeddings, y, g, p = get_all_data(dataset)
     if number_to_pick * 4 > len(embeddings):
         raise Exception('Cannot pick more data points that there exists.')
     losses, preds, _ = calaculate_loss_and_prediction(args, embeddings, y, model)
-    idx = range(len(losses))
-    correctly_classified = list(filter(lambda i: preds[i] == y[i], idx))
-    misclassified = list(filter(lambda i: preds[i] != y[i], idx))
-    C = sorted(correctly_classified, key=lambda i: losses[i])
-    M = sorted(misclassified, key=lambda i: losses[i], reverse=True)
-    chosen_correctly_classified = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, correctly_classified)
-    chosen_misclassified = get_at_most_n_low_and_high_samples_without_replacement(number_to_pick, misclassified)
-    chosen_idx = chosen_correctly_classified + chosen_misclassified
+    chosen_idx = []
+    idx = list(zip(range(len(losses)), y))
+    for label in np.unique(y):
+        labels_idx = list(filter(lambda x: x[1] == label, sorted_losses_idx))
+        labels_idx = list(zip(*labels_idx))[0]
+        correctly_classified = list(filter(lambda i: preds[i] == y[i], labels_idx))
+        misclassified = list(filter(lambda i: preds[i] != y[i], labels_idx))
+        correctly_classified_sorted = sorted(correctly_classified, key=lambda i: losses[i])
+        misclassified_sorted = sorted(misclassified, key=lambda i: losses[i], reverse=True)
+        chosen_idx.extend(correctly_classified_sorted[:number_to_pick] + misclassified_sorted[:number_to_pick])
     return embeddings[chosen_idx], y[chosen_idx], g[chosen_idx], p[chosen_idx]
 
 
