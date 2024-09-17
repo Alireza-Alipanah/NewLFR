@@ -289,7 +289,7 @@ def load_model_from_state_dict(model_path, model=None, remove_fc=True, device='c
 
 def load_model(path, remove_fc=False, device='cpu'):
     # loads a pytorch model that was saved as a whole
-    model = torch.load(path, map_location=torch.device(device))
+    model = torch.load(path, map_location=torch.device(device), weights_only=False)
     if remove_fc:
         model.fc = nn.Identity()
     return model

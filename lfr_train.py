@@ -200,7 +200,6 @@ def test_model(pred, y, groups, prefix, group_proportions, envs=None):
     )
 
 
-
 def run_stage(
     args,
     train,
