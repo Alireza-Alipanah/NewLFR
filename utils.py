@@ -1,4 +1,5 @@
 from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data
+from data import CifarMnistConvexCombinationDataset
 
 from sklearn.metrics import accuracy_score
 import numpy as np
@@ -9,6 +10,7 @@ from torchvision.models import resnet50, ResNet50_Weights
 from torch.optim import SGD
 import torch.nn.functional as F
 import torch.nn as nn
+import pandas as pd
 
 
 def set_seed(args):
@@ -22,38 +24,14 @@ def set_seed(args):
     torch.backends.cudnn.deterministic = True
 
 
-def load_data(
-    basedir,
-    batch_size,
-    target_resolution=(224, 224),
-    validation_for_train=False,
-    augment_train=True,
-    shuffle_train=True,
-    alternative_format=False
-):
+def get_transforms(target_resolution, augment_train, validation_for_train):
     train_transform = get_transform_cub(target_resolution=target_resolution, train=True, augment_data=augment_train)
-    val_transform = get_transform_cub(target_resolution=target_resolution, train=validation_for_train, augment_data=True) # TODO augment or not ?
+    val_transform = get_transform_cub(target_resolution=target_resolution, train=validation_for_train, augment_data=validation_for_train)
     test_transform = get_transform_cub(target_resolution=target_resolution, train=False, augment_data=False)
+    return train_transform, val_transform, test_transform
 
-    train_dataset = WaterBirdsDataset(
-        basedir=basedir,
-        split='train',
-        transform=train_transform,
-        alternative_format=alternative_format
-        )
-    val_dataset = WaterBirdsDataset(
-        basedir=basedir,
-        split='val',
-        transform=val_transform,
-        alternative_format=alternative_format
-        )
-    test_dataset = WaterBirdsDataset(
-        basedir=basedir,
-        split='test',
-        transform=test_transform,
-        alternative_format=alternative_format
-        )
 
+def get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size):
     train_dataloader = get_loader(
         data=train_dataset,
         train=shuffle_train,
@@ -79,6 +57,75 @@ def load_data(
         batch_size=batch_size,
         )
     return train_dataloader, val_dataloader, test_dataloader
+
+
+def load_data(
+    basedir,
+    batch_size,
+    target_resolution=(224, 224),
+    validation_for_train=False,
+    augment_train=True,
+    shuffle_train=True,
+    alternative_format=False
+):
+
+    train_transform, val_transform, test_transform = get_transforms(target_resolution, augment_train, validation_for_train)
+
+    train_dataset = WaterBirdsDataset(
+        basedir=basedir,
+        split='train',
+        transform=train_transform,
+        alternative_format=alternative_format
+        )
+    val_dataset = WaterBirdsDataset(
+        basedir=basedir,
+        split='val',
+        transform=val_transform,
+        alternative_format=alternative_format
+        )
+    test_dataset = WaterBirdsDataset(
+        basedir=basedir,
+        split='test',
+        transform=test_transform,
+        alternative_format=alternative_format
+        )
+    return get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size)
+
+
+def load_convex_combination_data(
+    mapping_csv_path,
+    alpha,
+    correlation,
+    batch_size,
+    target_resolution=(224, 224),
+    validation_for_train=False,
+    augment_train=True,
+    shuffle_train=True,
+):
+    mapping = pd.read_csv(mapping_csv_path)
+
+    train_transform, val_transform, test_transform = get_transforms(target_resolution, augment_train, validation_for_train)
+    train_dataset = CifarMnistConvexCombinationDataset(
+        mapping=mapping,
+        alpha=alpha,
+        split='train',
+        transform=train_transform
+        )
+    val_dataset = CifarMnistConvexCombinationDataset(
+        mapping=mapping,
+        alpha=alpha,
+        split='val',
+        transform=val_transform
+        )
+    test_dataset = CifarMnistConvexCombinationDataset(
+        mapping=mapping,
+        alpha=alpha,
+        split='test',
+        transform=test_transform
+        )
+    return get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size)
+
+
 
 
 def log_to_wandb(prefix, data_dict, epoch=None):
@@ -188,10 +235,9 @@ def test_model(test_dataloader, model, classification_func, group_proportions, i
     group_data = evaluate(test_dataloader, model, classification_func, group_proportions)
     prefix = 'test_start' if is_start else 'test'
     log_to_wandb(prefix, group_data)
-    print(
-        'Test metrics:\n\t' + \
-        '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
-    )
+    log_str = 'Test metrics:\n\t' + '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
+    print(log_str)
+    return log_str
 
 
 def get_resnet50_weights(args):

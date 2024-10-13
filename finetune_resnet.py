@@ -1,11 +1,13 @@
 import argparse
 import os
+from functools import partial
 
 import torch
 import wandb
 
 from utils import (
     load_data,
+    load_convex_combination_data,
     train_model,
     test_model,
     set_seed,
@@ -14,7 +16,7 @@ from utils import (
     get_optimizer,
     get_criterion,
     get_classification_func,
-    get_train_group_proportions
+    get_train_group_proportions,
 )
 
 if not torch.cuda.is_available():
@@ -36,28 +38,58 @@ def get_args():
     parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
     parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
+
+    # Expermients DataLoaders
+    parser.add_argument('--experiment', default='NormalWaterbirds', help='datset to load for experiments', type=str,
+        choices=[
+            'NormalWaterbirds',
+            'CifarMnistConvexCombination'
+        ]
+        )
+
+    # convex combination experiments values
+    parser.add_argument('--cc_alpha', default=0, help='alpha value for belding', type=float)
+    parser.add_argument('--cc_mapping_basedir', default='', help='path to the base directory of csv that specifies mapping of CIFAR and MNIST images', type=str)
+    parser.add_argument('--cc_correlation', default=0.65, help='correlation_value', type=str)
     args = parser.parse_args()
     return args
 
 
-def get_data(args):
-    train_dataloader, val_dataloader, test_dataloader = load_data(basedir=args.base_dir, batch_size=args.batch_size)
-    return train_dataloader, val_dataloader, test_dataloader
+def adjust_for_experiment(args):
+    # The goal of this function is to apply all experiment specific changes in one functions to facilitate future adjustments
+    if args.experiment == 'NormalWaterbirds':
+        load_data_func = partial(load_data, basedir=args.base_dir, batch_size=args.batch_size)
+        args.save_name = f'{args.save_name}_{wandb.run.name}'
+    elif args.experiment == 'CifarMnistConvexCombination':
+        mapping_csv_path = os.path.join(args.cc_mapping_basedir, f'{args.cc_correlation}_mapping.csv')
+        load_data_func = partial(load_convex_combination_data, mapping_csv_path=mapping_csv_path,
+         alpha=args.cc_alpha, correlation=args.cc_correlation, batch_size=args.batch_size)
+        args.save_path = os.path.join(args.save_path, f'alpha_{args.cc_alpha}', f'seed_{args.seed}', f'correlation_{int(float(args.cc_correlation) * 100)}')
+    return load_data_func
+
+
+def save_model(args, model, log_str):
+    model_state = model.state_dict()
+    os.makedirs(args.save_path, exist_ok=True)
+    torch.save(model_state, os.path.join(args.save_path, f'{args.save_name}.pth'))
+    with open(os.path.join(args.save_path, f'{args.save_name}_last_epoch_test_logs'), 'w') as f:
+        f.write(log_str + '\n\nwandb logs saved at:' + wandb.run.dir)
 
 
 if __name__ == '__main__':
     args = get_args()
     set_seed(args)
-    train_dataloader, val_dataloader, test_dataloader = get_data(args)
+    wandb.init(
+        project='Resnet50 on Waterbirds',
+        config=vars(args),
+    )
+    load_data_func = adjust_for_experiment(args)
+    train_dataloader, val_dataloader, test_dataloader = load_data_func()
     model = get_model(args, train_dataloader.dataset.n_classes)
     model = model.cuda()
     optimizer = get_optimizer(args, model.parameters())
     criterion = get_criterion(args)
     classification_func = get_classification_func(args)
-    wandb.init(
-        project='Resnet50 on Waterbirds',
-        config=vars(args),
-    )
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
     test_model(
         test_dataloader=test_dataloader,
@@ -76,13 +108,11 @@ if __name__ == '__main__':
         classification_func=classification_func,
         group_proportions=group_proportions
     )
-    test_model(
+    log_str = test_model(
         test_dataloader=test_dataloader,
         model=model,
         classification_func=classification_func,
         group_proportions=group_proportions
     )
-    model_state = model.state_dict()
-    os.makedirs(args.save_path, exist_ok=True)
-    torch.save(model_state, os.path.join(args.save_path, f'{args.save_name}_{wandb.run.name}.pth'))
+    save_model(args, model, log_str)
     wandb.finish()
