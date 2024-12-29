@@ -41,7 +41,7 @@ def get_sweep_conf():
             },
             'tracked_metrics': {
                 'value': str(
-                    [('mean_accuracy', 1), ('our_mean_accuracy', 1)]
+                    [('mean_accuracy', 1), ('our_mean_accuracy', 1), ('worst_group_accuracy', 1)]
                 )
             }
         }
