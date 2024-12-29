@@ -62,7 +62,7 @@ def adjust_for_experiment(args):
     # The goal of this function is to apply all experiment specific changes in one functions to facilitate future adjustments
     if args.experiment == 'NormalWaterbirds':
         load_data_func = partial(load_data, basedir=args.base_dir, batch_size=args.batch_size, spurious_correlation_value=args.spurious_correlation_value)
-        args.save_name = f'{args.save_name}_{wandb.run.name}'
+        args.save_name = f'{args.save_name}_{wandb.run.name}_{args.spurious_correlation_value}_{args.seed}_{args.batch_size}'
     elif args.experiment == 'CifarMnistConvexCombination':
         mapping_csv_path = os.path.join(args.cc_mapping_basedir, f'{args.cc_correlation}_mapping.csv')
         load_data_func = partial(load_convex_combination_data, mapping_csv_path=mapping_csv_path,
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     criterion = get_criterion(args)
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
-    logger = Logger(tracked_metrics=args.tracked_metrics, path=args.save_path)
+    logger = Logger(tracked_metrics=args.tracked_metrics, path=args.save_path, save_name=f'{args.save_name}_logs')
     test_model(
         test_dataloader=test_dataloader,
         model=model,
