@@ -1,7 +1,10 @@
 import os
 import pprint
-import wandb
+
 from utils import convert_to_wandb_format, log_to_wandb
+
+import wandb
+import torch
 
 
 class Logger:
