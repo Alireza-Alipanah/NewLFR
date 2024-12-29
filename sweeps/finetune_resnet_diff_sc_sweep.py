@@ -5,7 +5,7 @@ import wandb
 def get_sweep_conf():
     sweep_configuration = {
         'method': 'grid',
-        'name': f'fine tune resnet',
+        'name': f'fine tune resnet with different batch sizes in 8 to 64 and sc 99 sweep',
         'program': 'finetune_resnet.py',
         'description': '',
         'parameters': {
@@ -53,7 +53,7 @@ def main():
     config = get_sweep_conf()
     wandb.sweep(
         config,
-        project=f"ResNet50 Fine-tune",
+        project=f"Resnet50 on Waterbirds",
     )
 
 

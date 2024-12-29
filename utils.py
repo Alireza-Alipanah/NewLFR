@@ -159,7 +159,7 @@ def log_to_wandb(data_dict, epoch=None):
             **data_dict
         })
     else:
-        wandb.log(new_data)
+        wandb.log(data_dict)
 
 def convert_to_wandb_format(prefix, data_dict):
     new_data = {f'{prefix}/{key}': value for key, value in data_dict.items()}
