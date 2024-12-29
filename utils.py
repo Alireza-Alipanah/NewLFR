@@ -160,9 +160,6 @@ def convert_to_wandb_format(prefix, data_dict):
     return new_data
 
 
-def update_logger()
-
-
 def train_model(
     args,
     train_dataloader,
