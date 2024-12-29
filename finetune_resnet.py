@@ -1,7 +1,6 @@
 import argparse
 import os
 from functools import partial
-import json
 
 import torch
 import wandb
@@ -41,7 +40,7 @@ def get_args():
     parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
     parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the dataset with, use None for default', type=int)
-    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1)], help='list of metrics to track. should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=json.loads)
+    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1)], help='list of metrics to track. each should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=lambda x: eval(x))
 
     # Expermients DataLoaders
     parser.add_argument('--experiment', default='NormalWaterbirds', help='datset to load for experiments', type=str,
@@ -95,9 +94,6 @@ if __name__ == '__main__':
     criterion = get_criterion(args)
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
-    print('')
-    print(args.tracked_metrics)
-    print('')
     logger = Logger(tracked_metrics=args.tracked_metrics, path=args.save_path)
     test_model(
         test_dataloader=test_dataloader,
