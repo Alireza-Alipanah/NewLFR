@@ -6,17 +6,18 @@ from utils import convert_to_wandb_format, log_to_wandb
 
 class Logger:
     
-    def __init__(self, tracked_metrics, path):
+    def __init__(self, tracked_metrics, path, save_name):
         self.tracked_metrics = tracked_metrics
         self.validation_data = {}
         self.test_data = {}
         self.train_data = {}
         self.path = path
+        self.save_name = save_name
 
     def save_model(self, model, epoch_name):
         model_state = model.state_dict()
-        os.makedirs(args.save_path, exist_ok=True)
-        torch.save(model_state, os.path.join(args.save_path, f'{args.save_name}_{epoch_name}.pth'))
+        os.makedirs(self.path, exist_ok=True)
+        torch.save(model_state, os.path.join(self.path, f'{self.save_name}_{epoch_name}.pth'))
 
     def update(self, train_data, validation_data, test_data, model):
         for metric, multiplier in self.tracked_metrics:
