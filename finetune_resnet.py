@@ -1,6 +1,7 @@
 import argparse
 import os
 from functools import partial
+import json
 
 import torch
 import wandb
@@ -40,7 +41,7 @@ def get_args():
     parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
     parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the dataset with, use None for default', type=int)
-    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1)], help='list of metrics to track. should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=list)
+    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1)], help='list of metrics to track. should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=json.loads)
 
     # Expermients DataLoaders
     parser.add_argument('--experiment', default='NormalWaterbirds', help='datset to load for experiments', type=str,
