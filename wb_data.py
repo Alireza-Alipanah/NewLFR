@@ -1,5 +1,5 @@
 """
-COPIED FROM https://github.com/PolinaKirichenko/deep_feature_reweighting/blob/main/wb_data.py
+PARTS COPIED FROM https://github.com/PolinaKirichenko/deep_feature_reweighting/blob/main/wb_data.py
 """
 
 
@@ -43,6 +43,29 @@ class WaterBirdsDataset(Dataset):
         self.p_counts = (
                 torch.arange(self.n_places).unsqueeze(1) == torch.from_numpy(self.p_array)).sum(1).float()
         self.filename_array = self.metadata_df['img_filename'].values
+        self.make_min_maj_groups()
+        
+    def build_dataset(dataset, indexes):
+        trainset = dataset
+        trainset.y_array = dataset.y_array[indexes]
+        trainset.group_array = dataset.group_array[indexes]
+        trainset.confounder_array = dataset.confounder_array[indexes]
+        trainset.filename_array = dataset.filename_array[indexes]
+        trainset.metadata_df = dataset.metadata_df.iloc[indexes]
+        return trainset
+    
+    def make_min_maj_groups(self):
+        self.min_indexes = []
+        self.maj_indexes = []
+        for i in range(len(self.group_array)):
+            id_group = self.group_array[i]
+            if (id_group == 1) | (id_group == 2):
+                self.min_indexes.append(i)
+            else:
+                self.maj_indexes.append(i)
+                
+        self.maj_indexes = np.array(self.maj_indexes)
+        self.min_indexes = np.array(self.min_indexes)
 
     def __len__(self):
         return len(self.metadata_df)
@@ -143,4 +166,47 @@ def log_data(logger, train_data, test_data, val_data=None, get_yp_func=None):
         for group_idx in range(val_data.n_groups):
             y_idx, p_idx = get_yp_func(group_idx)
             logger.write(f'    Group {group_idx} (y={y_idx}, p={p_idx}): n = {val_data.group_counts[group_idx]:.0f}\n')
+
+
+def build_dataloader_with_correlation(dataset, correlation_num, batch_size, shuffle=True):
+        if correlation_num == None:
+            return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
+        
+        min_indexes = dataset.min_indexes
+        maj_indexes = dataset.maj_indexes
+        
+        min_count = len(min_indexes)
+        maj_count = len(maj_indexes)
+        
+        total = min_count + maj_count
+        c_current = (maj_count / total) * 100
+        
+        if correlation_num == 100:
+            return DataLoader(WaterBirdsDataset.build_dataset(dataset, maj_indexes), batch_size=batch_size, shuffle=shuffle)
+        if correlation_num == 0:
+            return DataLoader(WaterBirdsDataset.build_dataset(dataset, min_indexes), batch_size=batch_size, shuffle=shuffle)
+        
+        if c_current > correlation_num:
+            for i in range(100 - correlation_num):
+                if (correlation_num * (min_count - i)) % (100 - correlation_num) == 0:
+                    a = (correlation_num * (min_count - i)) // (100 - correlation_num)
+                    b = min_count - i
+
+                    min_new = min_indexes[range(b)]
+                    maj_new = maj_indexes[range(a)]
+                    indexes = [y for x in [min_new, maj_new] for y in x]
+                    return DataLoader(WaterBirdsDataset.build_dataset(dataset, indexes), batch_size=batch_size, shuffle=shuffle)
+        elif c_current < correlation_num:
+            for i in range(correlation_num):
+                if ((100 - correlation_num) * (maj_count - i)) % (correlation_num) == 0:
+                    b = ((100 - correlation_num) * (maj_count - i)) // (correlation_num)
+                    a = maj_count - i
+
+                    min_new = min_indexes[range(b)]
+                    maj_new = maj_indexes[range(a)]
+                    indexes = [y for x in [min_new, maj_new] for y in x]
+                    return DataLoader(WaterBirdsDataset.build_dataset(dataset, indexes), batch_size=batch_size, shuffle=shuffle)
+                
+        else:
+            return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
             

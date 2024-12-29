@@ -18,6 +18,7 @@ from utils import (
     get_classification_func,
     get_train_group_proportions,
 )
+from logger import Logger
 
 if not torch.cuda.is_available():
     raise Exception('cuda not available')
@@ -38,6 +39,8 @@ def get_args():
     parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
     parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
+    parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the dataset with, use None for default', type=int)
+    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1)], help='list of metrics to track. should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=list)
 
     # Expermients DataLoaders
     parser.add_argument('--experiment', default='NormalWaterbirds', help='datset to load for experiments', type=str,
@@ -58,7 +61,7 @@ def get_args():
 def adjust_for_experiment(args):
     # The goal of this function is to apply all experiment specific changes in one functions to facilitate future adjustments
     if args.experiment == 'NormalWaterbirds':
-        load_data_func = partial(load_data, basedir=args.base_dir, batch_size=args.batch_size)
+        load_data_func = partial(load_data, basedir=args.base_dir, batch_size=args.batch_size, spurious_correlation_value=args.spurious_correlation_value)
         args.save_name = f'{args.save_name}_{wandb.run.name}'
     elif args.experiment == 'CifarMnistConvexCombination':
         mapping_csv_path = os.path.join(args.cc_mapping_basedir, f'{args.cc_correlation}_mapping.csv')
@@ -91,6 +94,7 @@ if __name__ == '__main__':
     criterion = get_criterion(args)
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
+    logger = Logger(tracked_metrics=args.tracked_metrics, path=args.save_path)
     test_model(
         test_dataloader=test_dataloader,
         model=model,
@@ -102,11 +106,13 @@ if __name__ == '__main__':
         args=args,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
+        test_dataloader=test_dataloader,
         model=model,
         optimizer=optimizer,
         criterion=criterion,
         classification_func=classification_func,
-        group_proportions=group_proportions
+        group_proportions=group_proportions,
+        logger=logger
     )
     log_str = test_model(
         test_dataloader=test_dataloader,
@@ -115,4 +121,5 @@ if __name__ == '__main__':
         group_proportions=group_proportions
     )
     save_model(args, model, log_str)
+    logger.write_logs()
     wandb.finish()

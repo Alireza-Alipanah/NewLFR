@@ -1,4 +1,4 @@
-from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data
+from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data, build_dataloader_with_correlation
 from data import CifarMnistConvexCombinationDataset
 
 from sklearn.metrics import accuracy_score
@@ -17,6 +17,7 @@ def set_seed(args):
     if args.seed is None:
         return
     seed = args.seed
+    random.seed(seed)
     torch.cuda.manual_seed(seed)
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -31,14 +32,29 @@ def get_transforms(target_resolution, augment_train, validation_for_train):
     return train_transform, val_transform, test_transform
 
 
-def get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size):
-    train_dataloader = get_loader(
-        data=train_dataset,
-        train=shuffle_train,
-        reweight_groups=None,
-        reweight_classes=None,
-        reweight_places=None,
-        batch_size=batch_size,
+def get_loaders(
+    train_dataset,
+    val_dataset,
+    test_dataset,
+    shuffle_train,
+    batch_size,
+    spurious_correlation_value=None
+):
+    if spurious_correlation_value is None:
+        train_dataloader = get_loader(
+            data=train_dataset,
+            train=shuffle_train,
+            reweight_groups=None,
+            reweight_classes=None,
+            reweight_places=None,
+            batch_size=batch_size,
+            )
+    else:
+        train_dataloader = build_dataloader_with_correlation(
+            train_dataset,
+            spurious_correlation_value, 
+            batch_size,
+            shuffle=shuffle_train
         )
     val_dataloader = get_loader(
         data=val_dataset,
@@ -66,7 +82,8 @@ def load_data(
     validation_for_train=False,
     augment_train=True,
     shuffle_train=True,
-    alternative_format=False
+    alternative_format=False,
+    spurious_correlation_value=None,
 ):
 
     train_transform, val_transform, test_transform = get_transforms(target_resolution, augment_train, validation_for_train)
@@ -89,7 +106,14 @@ def load_data(
         transform=test_transform,
         alternative_format=alternative_format
         )
-    return get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size)
+    return get_loaders(
+        train_dataset,
+        val_dataset,
+        test_dataset,
+        shuffle_train,
+        batch_size,
+        spurious_correlation_value=spurious_correlation_value
+    )
 
 
 def load_convex_combination_data(
@@ -126,28 +150,34 @@ def load_convex_combination_data(
     return get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size)
 
 
-
-
 def log_to_wandb(prefix, data_dict, epoch=None):
-    new_data = {f'{prefix}/{key}': value for key, value in data_dict.items()}
     if epoch is not None:
         new_data['epoch'] = epoch
     wandb.log(new_data)
+
+def convert_to_wandb_format(prefix, data_dict):
+    new_data = {f'{prefix}/{key}': value for key, value in data_dict.items()}
+    return new_data
+
+
+def update_logger()
 
 
 def train_model(
     args,
     train_dataloader,
     val_dataloader,
+    test_dataloader,
     model,
     optimizer,
     criterion,
     classification_func,
-    group_proportions
+    group_proportions,
+    logger
 ):
     for epoch in tqdm(range(args.epochs)):
         model.train()
-        running_loss = 0
+        train_running_loss = 0
         for img, y, _, _ in train_dataloader:
             y = y.long() if args.use_softmax else y.float()
             img, y = img.cuda(), y.cuda()
@@ -156,18 +186,24 @@ def train_model(
             loss = criterion(outputs, y)
             loss.backward()
             optimizer.step()
-            running_loss += loss.item()
+            train_running_loss += loss.item()
             wandb.log({'train/step_loss': loss.item()})
-        running_loss /= len(train_dataloader)
-        group_data = evaluate(train_dataloader, model, classification_func, group_proportions)
+        train_group_data = evaluate(train_dataloader, model, classification_func, group_proportions)
+        validation_group_data, validation_running_loss = evaluate(val_dataloader, model, classification_func, group_proportions, criterion)
+        test_data = evaluate(test_dataloader, model, classification_func, group_proportions)
+        train_running_loss /= len(train_dataloader)
+        validation_running_loss /= len(val_dataloader)
+        train_data = {'avg_loss': train_running_loss, **train_group_data}
+        validation_data = {'avg_loss': validation_running_loss, **validation_group_data}
         log_to_wandb(
-            'train',
             {
-                'avg_loss': running_loss,
-                **group_data
+                **convert_to_wandb_format('train', train_data),
+                **convert_to_wandb_format('validation', validation_data),
+                **convert_to_wandb_format('test', test_data),
             },
             epoch=epoch
         )
+        logger.update(train_data, validation_data, test_data)
 
 
 def get_train_group_proportions(array):
@@ -210,7 +246,8 @@ def evaluate(
     dataloader,
     model,
     classification_func,
-    group_proportions
+    group_proportions,
+    criterion=None # TODO make this part cleaner
 ):
     model.eval()
     y = torch.rand((0))
@@ -223,11 +260,15 @@ def evaluate(
             outputs = torch.concat((outputs, batch_outputs))
             y = torch.concat((y, batch_y))
             groups = torch.concat((groups, g))
+    if criterion is not None:
+        running_loss = criterion(outputs, y.long)
     outputs = outputs
     pred = classification_func(outputs).numpy()
     y = y.cpu().int().numpy()
     groups = groups.cpu().numpy()
     group_data = calculate_group_accuracies(pred, y, groups, group_proportions)
+    if criterion is not None:
+        return group_data, running_loss
     return group_data
 
 
