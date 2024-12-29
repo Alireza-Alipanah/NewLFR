@@ -14,7 +14,7 @@ class Logger:
     def update(self, train_data, validation_data, test_data):
         for metric, multiplier in self.tracked_metrics:
             current = self.validation_data.get(metric, {metric: multiplier * float('inf')})
-            if current * multiplier < validation_data[metric] * multiplier:
+            if current[metric] * multiplier < validation_data[metric] * multiplier:
                 self.test_data[metric] = test_data
                 self.validation_data[metric] = validation_data
                 self.train_datat[metric] = train_data
