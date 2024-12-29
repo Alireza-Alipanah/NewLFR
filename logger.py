@@ -33,5 +33,5 @@ class Logger:
             'validation': self.validation_data,
             'train': self.train_data,
         }
-        with open(self.save_name, 'w') as f:
+        with open(f'{self.save_name}/logs', 'w') as f:
             f.write(pprint.pformat(data, width=1))
