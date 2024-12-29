@@ -231,6 +231,7 @@ def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict):
     print(maj_percent, maj_accuracy, min_percent, min_accuracy)
     print(maj_groups)
     print(min_groups)
+    print(proportions_dict.items())
     return maj_percent * maj_accuracy + min_percent * min_accuracy
 
 
