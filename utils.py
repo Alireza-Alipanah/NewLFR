@@ -152,10 +152,14 @@ def load_convex_combination_data(
     return get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size)
 
 
-def log_to_wandb(prefix, data_dict, epoch=None):
+def log_to_wandb(data_dict, epoch=None):
     if epoch is not None:
-        new_data['epoch'] = epoch
-    wandb.log(new_data)
+        wandb.log({
+            'epoch': epoch,
+            **data_dict
+        })
+    else:
+        wandb.log(new_data)
 
 def convert_to_wandb_format(prefix, data_dict):
     new_data = {f'{prefix}/{key}': value for key, value in data_dict.items()}
