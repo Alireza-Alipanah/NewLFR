@@ -219,7 +219,7 @@ def get_train_group_proportions(array):
     return proportions_dict
 
 
-def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict):
+def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict): # TODO: fix: this only works when there are four groups
     maj_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])[-2:]
     min_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])[:2]
     maj_idx = np.isin(groups, np.unique(list(zip(*maj_groups))[0]))
