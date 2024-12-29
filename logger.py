@@ -4,29 +4,28 @@ import pprint
 
 class Logger:
     
-    def __init__(tracked_metrics, path):
+    def __init__(self, tracked_metrics, path):
         self.tracked_metrics = tracked_metrics
         self.validation_data = {}
         self.test_data = {}
         self.train_data = {}
         self.path = path
 
-    def update(train_data, validation_data, test_data):
-        if self.tracked_metrics is not None:
-            for metric, multiplier in self.tracked_metrics:
-                current = self.validation_data.get(metric, {metric: multiplier * float('inf')})
-                if current * multiplier < validation_data[metric] * multiplier:
-                    self.test_data[metric] = test_data
-                    self.validation_data[metric] = validation_data
-                    self.train_datat[metric] = train_data
+    def update(self, train_data, validation_data, test_data):
+        for metric, multiplier in self.tracked_metrics:
+            current = self.validation_data.get(metric, {metric: multiplier * float('inf')})
+            if current * multiplier < validation_data[metric] * multiplier:
+                self.test_data[metric] = test_data
+                self.validation_data[metric] = validation_data
+                self.train_datat[metric] = train_data
         self.validation_data['last_epoch'] = validation_data
         self.test_data['last_epoch'] = test_data
         self.train_data['last_epoch'] = train_data
 
-    def add_test_data(metric, test_data): # this function is only used to add initial and last epoch test data. TODO: make this cleaner
+    def add_test_data(self, metric, test_data): # this function is only used to add initial and last epoch test data. TODO: make this cleaner
         self.test_data[metric] = test_data
 
-    def write_logs():
+    def write_logs(self):
         os.makedirs(self.path, exist_ok=True)
         data = {
             'test': self.test_data,
