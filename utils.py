@@ -222,12 +222,12 @@ def get_train_group_proportions(array):
 def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict):
     maj_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])
     min_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])
-    maj_idx = np.isin(groups, list(zip(*np.unique(maj_groups)))[0])
-    min_idx = np.isin(groups, list(zip(*np.unique(min_groups)))[0])
+    maj_idx = np.isin(groups, np.unique(list(zip(*maj_groups))[0]))
+    min_idx = np.isin(groups, np.unique(list(zip(*min_groups))[0]))
     maj_accuracy = accuracy_score(pred[maj_idx], y[maj_idx])
     min_accuracy = accuracy_score(pred[min_idx], y[min_idx])
-    maj_percent = sum(list(zip(*np.unique(maj_groups)))[1])
-    min_percent = sum(list(zip(*np.unique(maj_groups)))[1])
+    maj_percent = sum(list(zip(*maj_groups))[1])
+    min_percent = sum(list(zip(*min_groups))[1])
     return maj_percent * maj_accuracy + min_percent * min_accuracy
 
 
