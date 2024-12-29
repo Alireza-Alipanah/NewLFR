@@ -4,13 +4,12 @@ import pprint
 
 class Logger:
     
-    def __init__(self, tracked_metrics, path, save_name):
+    def __init__(self, tracked_metrics, path):
         self.tracked_metrics = tracked_metrics
         self.validation_data = {}
         self.test_data = {}
         self.train_data = {}
         self.path = path
-        self.save_name = save_name
 
     def update(self, train_data, validation_data, test_data):
         for metric, multiplier in self.tracked_metrics:
@@ -33,5 +32,5 @@ class Logger:
             'validation': self.validation_data,
             'train': self.train_data,
         }
-        with open(f'{self.save_name}/logs', 'w') as f:
+        with open(f'{self.path}/logs', 'w') as f:
             f.write(pprint.pformat(data, width=1))
