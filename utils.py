@@ -228,6 +228,9 @@ def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict):
     min_accuracy = accuracy_score(pred[min_idx], y[min_idx])
     maj_percent = sum(list(zip(*maj_groups))[1])
     min_percent = sum(list(zip(*min_groups))[1])
+    print(maj_percent, maj_accuracy, min_percent, min_accuracy)
+    print(maj_groups)
+    print(min_groups)
     return maj_percent * maj_accuracy + min_percent * min_accuracy
 
 
