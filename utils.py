@@ -264,7 +264,7 @@ def evaluate(
             y = torch.concat((y, batch_y))
             groups = torch.concat((groups, g))
     if criterion is not None:
-        running_loss = criterion(outputs, y.long)
+        running_loss = criterion(outputs, y.long())
     outputs = outputs
     pred = classification_func(outputs).numpy()
     y = y.cpu().int().numpy()
