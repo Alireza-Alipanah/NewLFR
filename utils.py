@@ -206,7 +206,7 @@ def train_model(
             },
             epoch=epoch
         )
-        logger.update(train_data, validation_data, test_data)
+        logger.update(train_data, validation_data, test_data, model)
 
 
 def get_train_group_proportions(array):
@@ -286,15 +286,22 @@ def evaluate(
     return group_data
 
 
-def test_model(test_dataloader, model, classification_func, group_proportions, logger, is_start=False):
+# def test_model(test_dataloader, model, classification_func, group_proportions, logger, is_start=False):
+#     group_data = evaluate(test_dataloader, model, classification_func, group_proportions)
+#     prefix = 'test_start' if is_start else 'test_last_epoch'
+#     test_data = convert_to_wandb_format(prefix, group_data)
+#     log_to_wandb(test_data)
+#     logger.add_test_data(prefix, group_data)
+#     log_str = 'Test metrics:\n\t' + '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
+#     print(log_str)
+
+
+def test_initial_model(test_dataloader, model, classification_func, group_proportions, logger):
     group_data = evaluate(test_dataloader, model, classification_func, group_proportions)
-    prefix = 'test_start' if is_start else 'test_last_epoch'
-    test_data = convert_to_wandb_format(prefix, group_data)
-    log_to_wandb(test_data)
+    prefix = 'test_start'
     logger.add_test_data(prefix, group_data)
-    log_str = 'Test metrics:\n\t' + '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
+    log_str = 'initial test metrics:\n\t' + '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
     print(log_str)
-    return log_str
 
 
 def get_resnet50_weights(args):

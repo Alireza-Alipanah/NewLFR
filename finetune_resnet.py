@@ -9,7 +9,7 @@ from utils import (
     load_data,
     load_convex_combination_data,
     train_model,
-    test_model,
+    test_initial_model,
     set_seed,
     get_resnet50_weights,
     get_model,
@@ -72,14 +72,6 @@ def adjust_for_experiment(args):
     return load_data_func
 
 
-def save_model(args, model, log_str):
-    model_state = model.state_dict()
-    os.makedirs(args.save_path, exist_ok=True)
-    torch.save(model_state, os.path.join(args.save_path, f'{args.save_name}.pth'))
-    with open(os.path.join(args.save_path, f'{args.save_name}_last_epoch_test_logs'), 'w') as f:
-        f.write(log_str + '\n\nwandb logs saved at:' + wandb.run.dir)
-
-
 if __name__ == '__main__':
     args = get_args()
     set_seed(args)
@@ -96,11 +88,10 @@ if __name__ == '__main__':
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
     logger = Logger(tracked_metrics=args.tracked_metrics, path=args.save_path)
-    test_model(
+    test_initial_model(
         test_dataloader=test_dataloader,
         model=model,
         classification_func=classification_func,
-        is_start=True,
         group_proportions=group_proportions,
         logger=logger,
     )
@@ -116,13 +107,7 @@ if __name__ == '__main__':
         group_proportions=group_proportions,
         logger=logger,
     )
-    log_str = test_model(
-        test_dataloader=test_dataloader,
-        model=model,
-        classification_func=classification_func,
-        group_proportions=group_proportions,
-        logger=logger,
-    )
-    save_model(args, model, log_str)
+    logger.save_model(model, 'last_epoch')
     logger.write_logs()
+    logger.log_to_wandb()
     wandb.finish()
