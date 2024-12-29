@@ -21,17 +21,28 @@ def get_sweep_conf():
             'save_name': {
                 'value': 'model_state_dict'
             },
-            'experiment': {
-                'value': 'CifarMnistConvexCombination'
+            'base_directory': {
+                'value': BASE_DIRECTORY_OF_IMAGES
             },
-            'cc_alpha': {
-                'values': [0, 0.2, 0.4, 0.8]
+            'epochs': {
+                'values': 100
             },
-            'cc_mapping_basedir': {
-                'value' : '/home/user01/data/convex_combination_data_mappings'
+            'wd': {
+                'value' : 1e-3
             },
-            'cc_correlation': {
-                'values' : [0.65, 0.75, 0.85, 0.95, 0.99, 1.0]
+            'lr': {
+                'value' : 1e-3
+            },
+            'batch_size': {
+                'values' : [8, 16, 24, 32, 40, 48, 56, 64]
+            },
+            'spurious_correlation_value': {
+                'value': 99
+            },
+            'tracked_metrics': {
+                'value': str(
+                    [('mean_accuracy', 1)]
+                )
             }
         }
     }
