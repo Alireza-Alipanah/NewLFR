@@ -23,6 +23,9 @@ class Logger:
         self.test_data['last_epoch'] = test_data
         self.train_data['last_epoch'] = train_data
 
+    def add_test_data(metric, test_data): # this function is only used to add initial and last epoch test data. TODO: make this cleaner
+        self.test_data[metric] = test_data
+
     def write_logs():
         os.makedirs(self.path, exist_ok=True)
         data = {

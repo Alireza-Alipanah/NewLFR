@@ -100,7 +100,8 @@ if __name__ == '__main__':
         model=model,
         classification_func=classification_func,
         is_start=True,
-        group_proportions=group_proportions
+        group_proportions=group_proportions,
+        logger=logger,
     )
     train_model(
         args=args,
@@ -112,13 +113,14 @@ if __name__ == '__main__':
         criterion=criterion,
         classification_func=classification_func,
         group_proportions=group_proportions,
-        logger=logger
+        logger=logger,
     )
     log_str = test_model(
         test_dataloader=test_dataloader,
         model=model,
         classification_func=classification_func,
-        group_proportions=group_proportions
+        group_proportions=group_proportions,
+        logger=logger,
     )
     save_model(args, model, log_str)
     logger.write_logs()

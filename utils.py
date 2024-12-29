@@ -269,10 +269,11 @@ def evaluate(
     return group_data
 
 
-def test_model(test_dataloader, model, classification_func, group_proportions, is_start=False):
+def test_model(test_dataloader, model, classification_func, group_proportions, logger, is_start=False):
     group_data = evaluate(test_dataloader, model, classification_func, group_proportions)
-    prefix = 'test_start' if is_start else 'test'
+    prefix = 'test_start' if is_start else 'test_last_epoch'
     log_to_wandb(prefix, group_data)
+    logger.add_test_data(prefix, group_data)
     log_str = 'Test metrics:\n\t' + '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
     print(log_str)
     return log_str
