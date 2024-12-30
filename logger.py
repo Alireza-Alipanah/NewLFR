@@ -50,4 +50,5 @@ class Logger:
     def log_to_wandb(self):
         for metric in self.test_data.keys():
             log_to_wandb(convert_to_wandb_format(f'test_{metric}', self.test_data[metric]))
+        for metric in self.validation_data.keys():
             log_to_wandb(convert_to_wandb_format(f'validation_{metric}', self.validation_data[metric]))
