@@ -24,7 +24,8 @@ from utils import (
     load_model_from_state_dict,
     load_model,
     get_classification_func,
-    calculate_env_accuracies
+    calculate_env_accuracies,
+    convert_to_wandb_format
 )
 
 
@@ -193,7 +194,7 @@ def test_model(pred, y, groups, prefix, group_proportions, envs=None):
     group_data = calculate_group_accuracies(pred, y, groups, group_proportions)
     env_data = calculate_env_accuracies(pred, y, envs) if envs is not None else {}
     data = {**group_data, **env_data}
-    log_to_wandb(prefix, data)
+    log_to_wandb(convert_to_wandb_format(prefix, data))
     print(
         f'{prefix} metrics:\n\t' + \
         '\n\t'.join([f'{key}: {value}' for key, value in data.items()])
