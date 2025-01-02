@@ -26,6 +26,7 @@ def get_args():
     parser.add_argument('--embedding_size', default=2048, help='size of the embeddings', type=int)
     parser.add_argument('--augment_validation', default=False, help='whether to augment validation', type=bool)
     parser.add_argument('--alternative_format', default=False, help='wheter to use the alternative format of dataset in which images are split in folders', type=bool)
+    parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the dataset with, use None for default', type=int)
     args = parser.parse_args()
     return args
 
@@ -37,7 +38,8 @@ def get_dataloaders(args):
         augment_train=False,
         shuffle_train=False,
         validation_for_train=args.augment_validation,
-        alternative_format=args.alternative_format
+        alternative_format=args.alternative_format,
+        spurious_correlation_value=args.spurious_correlation_value,
     )
     return train_dataloader, val_dataloader, test_dataloader
 
