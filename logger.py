@@ -23,7 +23,7 @@ class Logger:
         os.makedirs(self.path, exist_ok=True)
         torch.save(model_state, os.path.join(self.path, f'{self.save_name}_{epoch_name}.pth'))
 
-    def update(self, train_data, validation_data, test_data, model, ecpoh):
+    def update(self, train_data, validation_data, test_data, model, epoch):
         for metric, multiplier in self.tracked_metrics:
             current = self.validation_data.get(metric, {metric: -multiplier * float('inf')})
             if current[metric] * multiplier < validation_data[metric] * multiplier:
