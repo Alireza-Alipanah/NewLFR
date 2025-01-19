@@ -326,7 +326,11 @@ def new_fc(args, n_classes, model):
 def get_model(args, n_classes, modify_fc=True):
     if n_classes > 2 and (not args.use_softmax):
         raise Exception('Cannot use sigomid when n_classes > 2')
-    if args.model == 'ResNet50':
+    if args.continue_from_chechpoint:
+        model = resnet50(weights=None)
+        model = new_fc(args, n_classes, model)
+        model = load_model_from_state_dict(args.weights, model=model, remove_fc=False)
+    elif args.model == 'ResNet50':
         weights = get_resnet50_weights(args)
         model = resnet50(weights=weights)
         if modify_fc:
@@ -334,7 +338,6 @@ def get_model(args, n_classes, modify_fc=True):
     else:
         raise NotImplementedError()
     return model
-
 
 
 def get_optimizer(args, params):
