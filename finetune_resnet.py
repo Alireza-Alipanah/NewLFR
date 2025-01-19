@@ -64,6 +64,7 @@ def adjust_for_experiment(args):
     # The goal of this function is to apply all experiment specific changes in one functions to facilitate future adjustments
     if args.experiment == 'NormalWaterbirds':
         load_data_func = partial(load_data, basedir=args.base_dir, batch_size=args.batch_size, spurious_correlation_value=args.spurious_correlation_value)
+        run_name = wandb.run.name if wandb.run.name else wandb.run.id
         args.save_path = os.path.join(args.save_path, wandb.run.name)
         print(f'saving logs at {args.save_path}')
     elif args.experiment == 'CifarMnistConvexCombination':
