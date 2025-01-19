@@ -207,6 +207,8 @@ def train_model(
             epoch=epoch
         )
         logger.update(train_data, validation_data, test_data, model, epoch)
+        logger.write_logs()
+        logger.save_model(model, 'last_epoch')
 
 
 def get_train_group_proportions(array):
