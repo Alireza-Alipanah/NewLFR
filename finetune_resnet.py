@@ -89,7 +89,7 @@ if __name__ == '__main__':
     criterion = get_criterion(args)
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
-    logger = Logger(tracked_metrics=args.tracked_metrics, path=args.save_path, save_name=args.save_name)
+    logger = Logger(args=args, tracked_metrics=args.tracked_metrics, path=args.save_path, save_name=args.save_name)
     test_initial_model(
         test_dataloader=test_dataloader,
         model=model,

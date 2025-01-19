@@ -9,7 +9,8 @@ import torch
 
 class Logger:
     
-    def __init__(self, tracked_metrics, path, save_name):
+    def __init__(self, args, tracked_metrics, path, save_name):
+        self.args = args
         self.tracked_metrics = tracked_metrics
         self.validation_data = {}
         self.test_data = {}
@@ -22,13 +23,13 @@ class Logger:
         os.makedirs(self.path, exist_ok=True)
         torch.save(model_state, os.path.join(self.path, f'{self.save_name}_{epoch_name}.pth'))
 
-    def update(self, train_data, validation_data, test_data, model):
+    def update(self, train_data, validation_data, test_data, model, ecpoh):
         for metric, multiplier in self.tracked_metrics:
             current = self.validation_data.get(metric, {metric: -multiplier * float('inf')})
             if current[metric] * multiplier < validation_data[metric] * multiplier:
-                self.test_data[metric] = test_data
-                self.validation_data[metric] = validation_data
-                self.train_data[metric] = train_data
+                self.test_data[metric] = {'epoch': epoch, **test_data}
+                self.validation_data[metric] = {'epoch': epoch, **validation_data}
+                self.train_data[metric] = {'epoch': epoch, **train_data}
                 self.save_model(model, metric)
         self.validation_data['last_epoch'] = validation_data
         self.test_data['last_epoch'] = test_data
@@ -43,6 +44,7 @@ class Logger:
             'test': self.test_data,
             'validation': self.validation_data,
             'train': self.train_data,
+            'args': str(self.args),
         }
         with open(f'{self.path}/logs', 'w') as f:
             f.write(pprint.pformat(data, width=1))
