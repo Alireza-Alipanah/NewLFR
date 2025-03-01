@@ -76,7 +76,7 @@ def adjust_for_experiment(args):
         args.save_path = os.path.join(args.save_path, f'alpha_{args.cc_alpha}', f'seed_{args.seed}', f'correlation_{int(float(args.cc_correlation) * 100)}')
     elif args.experiment == 'DSprite':
         load_data_func = partial(load_dsprite_data, args=args, basedir=args.base_dir, batch_size=args.batch_size,
-                                  spurious_correlation_value=args.spurious_correlation_value)
+                                  spurious_correlation_value=args.spurious_correlation_value / 100)
         args.save_path = os.path.join(args.save_path, 'DSprite', f'seed_{args.seed}', f'sc_{args.spurious_correlation_value}', f'batch_size_{args.batch_size}')
     return load_data_func
 
