@@ -8,6 +8,7 @@ import wandb
 from utils import (
     load_data,
     load_convex_combination_data,
+    load_dsprite_data,
     train_model,
     test_initial_model,
     set_seed,
@@ -41,14 +42,15 @@ def get_args():
     parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
     parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the dataset with, use None for default', type=int)
-    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1)], help='list of metrics to track. each should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=lambda x: eval(x))
+    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1), ('worst_group_accuracy', 1)], help='list of metrics to track. each should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=lambda x: eval(x))
 
 
     # Expermients DataLoaders
     parser.add_argument('--experiment', default='NormalWaterbirds', help='datset to load for experiments', type=str,
         choices=[
             'NormalWaterbirds',
-            'CifarMnistConvexCombination'
+            'CifarMnistConvexCombination',
+            'DSprite'
         ]
         )
 
@@ -72,6 +74,10 @@ def adjust_for_experiment(args):
         load_data_func = partial(load_convex_combination_data, mapping_csv_path=mapping_csv_path,
          alpha=args.cc_alpha, correlation=args.cc_correlation, batch_size=args.batch_size)
         args.save_path = os.path.join(args.save_path, f'alpha_{args.cc_alpha}', f'seed_{args.seed}', f'correlation_{int(float(args.cc_correlation) * 100)}')
+    elif args.experiment == 'DSprite':
+        load_data_func = partial(load_dsprite_data, args=args, basedir=args.base_dir, batch_size=args.batch_size,
+                                  spurious_correlation_value=args.spurious_correlation_value)
+        args.save_path = os.path.join(args.save_path, 'DSprite', f'seed_{args.seed}', f'sc_{args.spurious_correlation_value}', f'batch_size_{args.batch_size}')
     return load_data_func
 
 
@@ -79,7 +85,7 @@ if __name__ == '__main__':
     args = get_args()
     set_seed(args)
     wandb.init(
-        project='Resnet50 on Waterbirds',
+        project='Resnet on Waterbirds',
         config=vars(args),
     )
     load_data_func = adjust_for_experiment(args)

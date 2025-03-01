@@ -1,12 +1,13 @@
 from wb_data import WaterBirdsDataset, get_transform_cub, get_loader, log_data, build_dataloader_with_correlation
-from data import CifarMnistConvexCombinationDataset
+from data import CifarMnistConvexCombinationDataset, DSprite, building_dsprite_dataloader
 
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 import numpy as np
 from tqdm import tqdm
 import wandb
 import torch
-from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models import resnet50, ResNet50_Weights, resnet18, ResNet18_Weights
 from torch.optim import SGD
 import torch.nn.functional as F
 import torch.nn as nn
@@ -150,6 +151,57 @@ def load_convex_combination_data(
         transform=test_transform
         )
     return get_loaders(train_dataset, val_dataset, test_dataset, shuffle_train, batch_size)
+
+
+def load_dsprite_data(
+    args,
+    basedir,
+    batch_size,
+    shuffle_train=True,
+    spurious_correlation_value=None,
+):
+    ds = DSprite(basedir, 0.5, seed=args.seed)
+    gs = []
+    ys = []
+    imgs = []
+    for i in range(len(ds)): ########################################################################
+        imgs.append(ds[i][0])
+        ys.append(ds[i][1])
+        gs.append(ds[i][2])
+    imgs, ys, gs = np.array(imgs), np.array(ys), np.array(gs)
+    number_of_samples = len(ys)
+    
+    train_dataset_indexes, test_val_dataset_indexes = train_test_split(list(range(number_of_samples)), test_size=0.75, random_state=args.seed)
+    val_dataset_indexes, test_dataset_indexes = train_test_split(test_val_dataset_indexes, test_size=1/3, random_state=args.seed)
+    val_dataset_indexes, last_layer_dataset_indexes = train_test_split(val_dataset_indexes, test_size=0.5, random_state=args.seed)
+
+
+    train_loader = building_dsprite_dataloader(
+        imgs=imgs[train_dataset_indexes],
+        ys=ys[train_dataset_indexes],
+        gs=gs[train_dataset_indexes],
+        correlation_num=spurious_correlation_value,
+        portion_num=1, #TODO portion ratio
+        batch_size=batch_size,
+        shuffle=shuffle_train)
+    val_loader = building_dsprite_dataloader(
+        imgs=imgs[val_dataset_indexes],
+        ys=ys[val_dataset_indexes],
+        gs=gs[val_dataset_indexes],
+        correlation_num=0.5,
+        portion_num=1, #TODO portion ratio
+        batch_size=batch_size,
+        shuffle=False)
+    test_loader = building_dsprite_dataloader(
+        imgs=imgs[test_dataset_indexes],
+        ys=ys[test_dataset_indexes],
+        gs=gs[test_dataset_indexes],
+        correlation_num=0.5,
+        portion_num=1, #TODO portion ratio
+        batch_size=batch_size,
+        shuffle=False)
+    return train_loader, val_loader, test_loader
+
 
 
 def log_to_wandb(data_dict, epoch=None):
@@ -318,6 +370,16 @@ def get_resnet50_weights(args):
     return weights
 
 
+def get_resnet18_weights(args):
+    if args.weights == 'ResNet18_Weights.DEFAULT':
+        weights = ResNet18_Weights.DEFAULT
+    elif args.weights == 'None':
+        weights = None
+    else:
+        raise NotImplementedError()
+    return weights
+
+
 def new_fc(args, n_classes, model):
     in_features = model.fc.in_features
     out_features = n_classes if args.use_softmax else 1
@@ -328,13 +390,18 @@ def new_fc(args, n_classes, model):
 def get_model(args, n_classes, modify_fc=True):
     if n_classes > 2 and (not args.use_softmax):
         raise Exception('Cannot use sigomid when n_classes > 2')
-    if args.continue_from_chechpoint:
+    if args.continue_from_chechpoint and args.model == 'ResNet50':
         model = resnet50(weights=None)
         model = new_fc(args, n_classes, model)
         model = load_model_from_state_dict(args.weights, model=model, remove_fc=False)
     elif args.model == 'ResNet50':
         weights = get_resnet50_weights(args)
         model = resnet50(weights=weights)
+        if modify_fc:
+            model = new_fc(args, n_classes, model)
+    elif args.model == 'ResNet18':
+        weights = get_resnet18_weights(args)
+        model = resnet18(weights=weights)
         if modify_fc:
             model = new_fc(args, n_classes, model)
     else:
