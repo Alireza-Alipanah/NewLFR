@@ -164,7 +164,7 @@ def load_dsprite_data(
     gs = []
     ys = []
     imgs = []
-    for i in range(len(ds)): ########################################################################
+    for i in range(len(ds)):
         imgs.append(ds[i][0])
         ys.append(ds[i][1])
         gs.append(ds[i][2])

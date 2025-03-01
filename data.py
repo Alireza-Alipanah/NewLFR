@@ -166,7 +166,7 @@ class DSpriteImageDataset(Dataset):
         self.labels = torch.tensor(labels, dtype=torch.long)     # Convert to tensor
         self.groups = torch.tensor(groups, dtype=torch.float32)  # Convert to tensor
         self.n_classes = len(np.unique(self.labels))
-        self.group_array = self.groups # for compatibility purposes
+        self.group_array = groups # for compatibility purposes
 
     def __len__(self):
         return len(self.labels)
