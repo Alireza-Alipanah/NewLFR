@@ -85,7 +85,7 @@ if __name__ == '__main__':
     args = get_args()
     set_seed(args)
     wandb.init(
-        project='Resnet on Waterbirds',
+        project='Resnet18 on DSprites',
         config=vars(args),
     )
     load_data_func = adjust_for_experiment(args)
