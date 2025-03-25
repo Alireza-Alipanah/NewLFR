@@ -64,10 +64,10 @@ def get_args():
 
 def adjust_for_experiment(args):
     # The goal of this function is to apply all experiment specific changes in one functions to facilitate future adjustments
+    run_name = wandb.run.name if wandb.run.name else wandb.run.id
     if args.experiment == 'NormalWaterbirds':
         load_data_func = partial(load_data, basedir=args.base_dir, batch_size=args.batch_size, spurious_correlation_value=args.spurious_correlation_value)
-        run_name = wandb.run.name if wandb.run.name else wandb.run.id
-        args.save_path = os.path.join(args.save_path, wandb.run.name)
+        args.save_path = os.path.join(args.save_path, run_name)
         print(f'saving logs at {args.save_path}')
     elif args.experiment == 'CifarMnistConvexCombination':
         mapping_csv_path = os.path.join(args.cc_mapping_basedir, f'{args.cc_correlation}_mapping.csv')
@@ -78,6 +78,7 @@ def adjust_for_experiment(args):
         load_data_func = partial(load_dsprite_data, args=args, basedir=args.base_dir, batch_size=args.batch_size,
                                   spurious_correlation_value=args.spurious_correlation_value / 100)
         args.save_path = os.path.join(args.save_path, 'DSprite', f'seed_{args.seed}', f'sc_{args.spurious_correlation_value}', f'batch_size_{args.batch_size}')
+    args.save_name = f'{args.save_name}_{run_name}'
     return load_data_func
 
 
