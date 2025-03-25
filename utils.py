@@ -286,16 +286,19 @@ def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict): # TODO
 def calculate_group_accuracies(pred, y, groups, proportions_dict):
     group_data = dict()
     mean_acc = 0
+    group_accuracies = []
     for group in np.unique(groups):
         group_pred = pred[groups == group]
         group_y = y[groups == group]
         group_accuracy = accuracy_score(group_y, group_pred)
         group_data[f'group_{int(group)}_accuracy'] = group_accuracy
+        group_accuracies.append(group_accuracy)
         mean_acc += group_accuracy * proportions_dict[group] # calculated according to JTT paper
     group_data['worst_group_accuracy'] = min(group_data.values())
     group_data['accuracy'] = accuracy_score(y, pred)
     group_data['mean_accuracy'] = mean_acc
     group_data['our_mean_accuracy'] = calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict)
+    group_data['group_average_accuracy'] = np.mean(group_accuracies)
     return group_data
 
 
