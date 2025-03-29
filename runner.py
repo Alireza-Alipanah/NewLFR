@@ -21,7 +21,8 @@ class DefaultRunner:
             criterion,
             classification_func,
             group_proportions,
-            logger
+            logger,
+            **kwargs, # NOT USED, ONLY ADDED FOR EASE OF USE
         ):
         self.args = args
         self.train_dataloader = train_dataloader
@@ -95,8 +96,9 @@ class DefaultRunner:
     def updae_gradient(self, inputs, targets):
         outputs = self.model(inputs).squeeze()
         loss = self.criterion(outputs, targets)
+        loss_value = loss.item()
         loss.backward()
-        return loss
+        return loss_value
 
     
     def train_model(self):
@@ -107,9 +109,110 @@ class DefaultRunner:
                 y = y.long() if self.args.use_softmax else y.float()
                 img, y = img.cuda(), y.cuda()
                 self.optimizer.zero_grad()
-                loss = self.updae_gradient(img, y)
+                loss_value = self.updae_gradient(img, y)
                 self.optimizer.step()
-                train_running_loss += loss.item()
-                wandb.log({'train/step_loss': loss.item()})
+                train_running_loss += loss_value
+                wandb.log({'train/step_loss': loss_value})
             self.evaluate_epoch(train_running_loss, epoch)
+
+    
+    def finish(self):
+        self.logger.save_model(self.model, 'last_epoch')
+        self.logger.write_logs()
+        self.logger.log_to_wandb()
+
+
+
+class OptimalDirectionRunner(DefaultRunner):
+    def __init__(
+            self,
+            args,
+            train_dataloader,
+            val_dataloader,
+            test_dataloader,
+            model,
+            optimizer,
+            criterion,
+            classification_func,
+            group_proportions,
+            logger,
+            oprimal_direction_lr,
+            optimal_direction_tol,
+            optimal_direction_max_iter,
+            **kwargs
+        ):
+        super().__init__(
+            args=args,
+            train_dataloader=train_dataloader,
+            val_dataloader=val_dataloader,
+            test_dataloader=test_dataloader,
+            model=model,
+            optimizer=optimizer,
+            criterion=criterion,
+            classification_func=classification_func,
+            group_proportions=group_proportions,
+            logger=logger,
+            **kwargs
+        )
+        self.oprimal_direction_lr = oprimal_direction_lr
+        self.optimal_direction_tol = optimal_direction_tol
+        self.optimal_direction_max_iter = optimal_direction_max_iter
+
+    
+    def calculate_optimal_direction(self, vectors):
+        """
+        Finds a unit vector v that:
+        1. Has a positive inner product with all given vectors in `vectors`.
+        2. Maximizes the sum of inner products with all vectors while satisfying the first condition.
+
+        Parameters:
+            vectors (torch.Tensor): A batch of n vectors, each of dimension d, representing per-sample gradients.
+            oprimal_direction_lr (float, default=0.1): Learning rate for updating the direction vector.
+            optimal_direction_tol (float, default=1e-6): Tolerance for convergence (stopping criterion based on change in v).
+            optimal_direction_max_iter (int, default=10): Maximum number of iterations to adjust v.
+
+        Returns:
+            torch.Tensor: The optimized unit vector v that aligns positively with all input vectors 
+                        while maximizing the total inner product.
+        """
+        s = vectors.sum(dim=0)
+        v = s / s.norm(p=2)
+
+        for _ in range(self.optimal_direction_max_iter):
+            ips = torch.matmul(vectors, v)
+            viol = ips <= 0
+            if not viol.any():
+                break
+            correction = vectors[viol].sum(dim=0)
+            v_new = v + self.oprimal_direction_lr * correction
+            v_new = v_new / v_new.norm(p=2)
+            if torch.norm(v - v_new, p=2) < self.optimal_direction_tol:
+                break
+            v = v_new
+
+        return v
+    
+
+    def updae_gradient(self, inputs, targets):
+        outputs = self.model(inputs)
+        loss = self.criterion(outputs, targets)
+        loss_value = loss.item()
+        
+        # Compute per-sample gradients
+        grads = torch.autograd.grad(loss, self.model.parameters(), retain_graph=True, create_graph=True)
+        
+        # Stack gradients (each row corresponds to a sample)
+        grad_matrix = torch.stack([g.flatten() for g in grads], dim=1).T  # Shape: (batch_size, num_params)
+        
+        # Compute the optimal update direction
+        optimal_v = self.optimal_direction(grad_matrix)
+
+        # Apply the optimal gradient update
+        with torch.no_grad():
+            idx = 0
+            for param in self.model.parameters():
+                param.grad = -optimal_v[idx : idx + param.numel()].reshape(param.shape)  # Negate direction
+                idx += param.numel()
+
+        return loss_value
     

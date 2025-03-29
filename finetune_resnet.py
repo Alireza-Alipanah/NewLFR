@@ -18,7 +18,10 @@ from utils import (
     get_train_group_proportions,
 )
 from logger import Logger
-from runner import DefaultRunner
+from runner import (
+    DefaultRunner,
+    OptimalDirectionRunner
+)
 
 if not torch.cuda.is_available():
     raise Exception('cuda not available')
@@ -26,6 +29,7 @@ if not torch.cuda.is_available():
 
 def get_args():
     parser = argparse.ArgumentParser('Pretraining Resnet50')
+    parser.add_argument('--project_name', default='Resnet18 on DSprites', help='project name to use for wandb', type=str)
     parser.add_argument('--base_dir', default='/kaggle/working/waterbird_complete95_forest2water2', help='base directory of images', type=str)
     parser.add_argument('--optimizer', default='SGD', help='optimizer to use', type=str)
     parser.add_argument('--momentum_decay', default=0.9, help='momentum decay of optimizer', type=float)
@@ -41,7 +45,8 @@ def get_args():
     parser.add_argument('--use_softmax', default=False, help='wether to use softmax or sigmoid', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
     parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the dataset with, use None for default', type=int)
-    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1), ('worst_group_accuracy', 1)], help='list of metrics to track. each should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=lambda x: eval(x))
+    parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1), ('worst_group_accuracy', 1)], help='list of metrics to track. ' + \
+    ' each should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=lambda x: eval(x))
 
 
     # Expermients DataLoaders
@@ -57,6 +62,18 @@ def get_args():
     parser.add_argument('--cc_alpha', default=0, help='alpha value for belding', type=float)
     parser.add_argument('--cc_mapping_basedir', default='', help='path to the base directory of csv that specifies mapping of CIFAR and MNIST images', type=str)
     parser.add_argument('--cc_correlation', default=0.65, help='correlation_value', type=str)
+
+    # runners arguemtns
+    parser.add_argument('--runner', default='DefaultRunner', help='Runner to use for training the model. supported: DefaultRunner, OptimalDirectionRunner', type=str,
+                        choices=[
+                            'DefaultRunner',
+                            'OptimalDirectionRunner',
+                        ]
+                        )
+    parser.add_argument('--runner_oprimal_direction_lr', default=0.1, help='learning rate used in calculating optimal direction. only for OptimalDirectionRunner.', type=float)
+    parser.add_argument('--runner_optimal_direction_tol', default=1e-6, help='tolerance used in calculating optimal direction. only for OptimalDirectionRunner.', type=float)
+    parser.add_argument('--runner_optimal_direction_max_iter', default=10, help='max iterations used in calculating optimal direction. only for OptimalDirectionRunner.', type=int)
+
     args = parser.parse_args()
     return args
 
@@ -81,13 +98,7 @@ def adjust_for_experiment(args):
     return load_data_func
 
 
-if __name__ == '__main__':
-    args = get_args()
-    set_seed(args)
-    wandb.init(
-        project='Resnet18 on DSprites',
-        config=vars(args),
-    )
+def get_runner_arguments(args):
     load_data_func = adjust_for_experiment(args)
     train_dataloader, val_dataloader, test_dataloader = load_data_func()
     model = get_model(args, train_dataloader.dataset.n_classes)
@@ -97,23 +108,49 @@ if __name__ == '__main__':
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
     logger = Logger(args=args, tracked_metrics=args.tracked_metrics, path=args.save_path, save_name=args.save_name)
+    runner_arguments = {
+        'args': args,
+        'train_dataloader': train_dataloader,
+        'val_dataloader': val_dataloader,
+        'test_dataloader': test_dataloader,
+        'model': model,
+        'optimizer': optimizer,
+        'criterion': criterion,
+        'classification_func': classification_func,
+        'group_proportions': group_proportions,
+        'logger': logger,
+        'oprimal_direction_lr': args.runner_oprimal_direction_lr,
+        'optimal_direction_tol': args.runner_optimal_direction_tol,
+        'optimal_direction_max_iter': args.optimal_direction_max_iter
+    }
+    return runner_arguments
+
+
+
+def get_runner(args, runner_arguments):
+    if args.runner == 'DefaultRunner':
+        runner_class = DefaultRunner
+    elif args.runner == 'OptimalDirectionRunner':
+        runner_class = OptimalDirectionRunner
+    else:
+        raise NotImplementedError()
+    runner = runner_class(**runner_arguments)
+    return runner
     
-    runner = DefaultRunner(
-        args=args,
-        train_dataloader=train_dataloader,
-        val_dataloader=val_dataloader,
-        test_dataloader=test_dataloader,
-        model=model,
-        optimizer=optimizer,
-        criterion=criterion,
-        classification_func=classification_func,
-        group_proportions=group_proportions,
-        logger=logger,
+
+
+if __name__ == '__main__':
+    args = get_args()
+    set_seed(args)
+    wandb.init(
+        project=args.project_name,
+        config=vars(args),
     )
+
+    runner_arguments = get_runner_arguments(args)
+    runner = get_runner(args, runner_arguments)
     runner.test_initial_model()
     runner.train()
+    runner.finish()
 
-    logger.save_model(model, 'last_epoch')
-    logger.write_logs()
-    logger.log_to_wandb()
     wandb.finish()
