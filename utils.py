@@ -218,51 +218,6 @@ def convert_to_wandb_format(prefix, data_dict):
     return new_data
 
 
-def train_model(
-    args,
-    train_dataloader,
-    val_dataloader,
-    test_dataloader,
-    model,
-    optimizer,
-    criterion,
-    classification_func,
-    group_proportions,
-    logger
-):
-    for epoch in tqdm(range(args.epochs)):
-        model.train()
-        train_running_loss = 0
-        for img, y, _, _ in train_dataloader:
-            y = y.long() if args.use_softmax else y.float()
-            img, y = img.cuda(), y.cuda()
-            optimizer.zero_grad()
-            outputs = model(img).squeeze()
-            loss = criterion(outputs, y)
-            loss.backward()
-            optimizer.step()
-            train_running_loss += loss.item()
-            wandb.log({'train/step_loss': loss.item()})
-        train_group_data = evaluate(train_dataloader, model, classification_func, group_proportions)
-        validation_group_data, validation_running_loss = evaluate(val_dataloader, model, classification_func, group_proportions, criterion)
-        test_data = evaluate(test_dataloader, model, classification_func, group_proportions)
-        train_running_loss /= len(train_dataloader)
-        validation_running_loss /= len(val_dataloader)
-        train_data = {'avg_loss': train_running_loss, **train_group_data}
-        validation_data = {'avg_loss': validation_running_loss, **validation_group_data}
-        log_to_wandb(
-            {
-                **convert_to_wandb_format('train', train_data),
-                **convert_to_wandb_format('validation', validation_data),
-                **convert_to_wandb_format('test', test_data),
-            },
-            epoch=epoch
-        )
-        logger.update(train_data, validation_data, test_data, model, epoch)
-        logger.write_logs()
-        logger.save_model(model, 'last_epoch')
-
-
 def get_train_group_proportions(array):
     flattened_arr = array.flatten().astype('int')
     value_counts = np.bincount(flattened_arr)
@@ -313,36 +268,6 @@ def calculate_env_accuracies(pred, y, envs):
     return env_data
 
 
-def evaluate(
-    dataloader,
-    model,
-    classification_func,
-    group_proportions,
-    criterion=None # TODO make this part cleaner
-):
-    model.eval()
-    y = torch.rand((0))
-    outputs = torch.rand((0))
-    groups = torch.rand((0))
-    with torch.no_grad():
-        for img, batch_y, g, _ in dataloader:
-            img = img.cuda()
-            batch_outputs = model(img).squeeze().cpu()
-            outputs = torch.concat((outputs, batch_outputs))
-            y = torch.concat((y, batch_y))
-            groups = torch.concat((groups, g))
-    if criterion is not None:
-        running_loss = criterion(outputs, y.long())
-    outputs = outputs
-    pred = classification_func(outputs).numpy()
-    y = y.cpu().int().numpy()
-    groups = groups.cpu().numpy()
-    group_data = calculate_group_accuracies(pred, y, groups, group_proportions)
-    if criterion is not None:
-        return group_data, running_loss
-    return group_data
-
-
 # def test_model(test_dataloader, model, classification_func, group_proportions, logger, is_start=False):
 #     group_data = evaluate(test_dataloader, model, classification_func, group_proportions)
 #     prefix = 'test_start' if is_start else 'test_last_epoch'
@@ -351,14 +276,6 @@ def evaluate(
 #     logger.add_test_data(prefix, group_data)
 #     log_str = 'Test metrics:\n\t' + '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
 #     print(log_str)
-
-
-def test_initial_model(test_dataloader, model, classification_func, group_proportions, logger):
-    group_data = evaluate(test_dataloader, model, classification_func, group_proportions)
-    prefix = 'test_start'
-    logger.add_test_data(prefix, group_data)
-    log_str = 'initial test metrics:\n\t' + '\n\t'.join([f'{key}: {value}' for key, value in group_data.items()])
-    print(log_str)
 
 
 def get_resnet50_weights(args):

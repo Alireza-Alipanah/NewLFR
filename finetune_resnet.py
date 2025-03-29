@@ -9,8 +9,6 @@ from utils import (
     load_data,
     load_convex_combination_data,
     load_dsprite_data,
-    train_model,
-    test_initial_model,
     set_seed,
     get_resnet50_weights,
     get_model,
@@ -20,6 +18,7 @@ from utils import (
     get_train_group_proportions,
 )
 from logger import Logger
+from runner import DefaultRunner
 
 if not torch.cuda.is_available():
     raise Exception('cuda not available')
@@ -98,14 +97,8 @@ if __name__ == '__main__':
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
     logger = Logger(args=args, tracked_metrics=args.tracked_metrics, path=args.save_path, save_name=args.save_name)
-    test_initial_model(
-        test_dataloader=test_dataloader,
-        model=model,
-        classification_func=classification_func,
-        group_proportions=group_proportions,
-        logger=logger,
-    )
-    train_model(
+    
+    runner = DefaultRunner(
         args=args,
         train_dataloader=train_dataloader,
         val_dataloader=val_dataloader,
@@ -117,6 +110,9 @@ if __name__ == '__main__':
         group_proportions=group_proportions,
         logger=logger,
     )
+    runner.test_initial_model()
+    runner.train()
+
     logger.save_model(model, 'last_epoch')
     logger.write_logs()
     logger.log_to_wandb()
