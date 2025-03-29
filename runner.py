@@ -205,7 +205,7 @@ class OptimalDirectionRunner(DefaultRunner):
         grad_matrix = torch.stack([g.flatten() for g in grads], dim=1).T  # Shape: (batch_size, num_params)
         
         # Compute the optimal update direction
-        optimal_v = self.optimal_direction(grad_matrix)
+        optimal_v = self.calculate_optimal_direction(grad_matrix)
 
         # Apply the optimal gradient update
         with torch.no_grad():
