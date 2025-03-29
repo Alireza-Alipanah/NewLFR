@@ -52,14 +52,14 @@ class DefaultRunner:
                 outputs = torch.concat((outputs, batch_outputs))
                 y = torch.concat((y, batch_y))
                 groups = torch.concat((groups, g))
-        if apply_criterion is not None:
+        if apply_criterion:
             running_loss = self.criterion(outputs, y.long())
         outputs = outputs
         pred = self.classification_func(outputs).numpy()
         y = y.cpu().int().numpy()
         groups = groups.cpu().numpy()
         group_data = calculate_group_accuracies(pred, y, groups, self.group_proportions)
-        if apply_criterion is not None:
+        if apply_criterion:
             return group_data, running_loss
         return group_data
 
