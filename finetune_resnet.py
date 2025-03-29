@@ -121,7 +121,7 @@ def get_runner_arguments(args):
         'logger': logger,
         'oprimal_direction_lr': args.runner_oprimal_direction_lr,
         'optimal_direction_tol': args.runner_optimal_direction_tol,
-        'optimal_direction_max_iter': args.optimal_direction_max_iter
+        'optimal_direction_max_iter': args.runner_optimal_direction_max_iter
     }
     return runner_arguments
 
