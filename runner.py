@@ -101,7 +101,7 @@ class DefaultRunner:
         return loss_value
 
     
-    def train_model(self):
+    def train(self):
         for epoch in tqdm(range(self.args.epochs)):
             self.model.train()
             train_running_loss = 0
