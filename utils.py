@@ -4,7 +4,6 @@ from data import CifarMnistConvexCombinationDataset, DSprite, building_dsprite_d
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import numpy as np
-from tqdm import tqdm
 import wandb
 import torch
 from torchvision.models import resnet50, ResNet50_Weights, resnet18, ResNet18_Weights

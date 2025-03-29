@@ -10,7 +10,6 @@ from utils import (
     load_convex_combination_data,
     load_dsprite_data,
     set_seed,
-    get_resnet50_weights,
     get_model,
     get_optimizer,
     get_criterion,
