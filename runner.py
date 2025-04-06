@@ -99,6 +99,10 @@ class DefaultRunner:
         loss_value = loss.item()
         loss.backward()
         return loss_value
+    
+
+    def calculate_implicit_regularization(self):
+        self.model.eval()
 
     
     def train(self):

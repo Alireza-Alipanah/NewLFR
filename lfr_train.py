@@ -37,7 +37,6 @@ def get_args():
     parser.add_argument('--embeddings_dir', help='base directory of embeddings', type=str)
     parser.add_argument('--embeddings_dim', default=2048, help='dimension of embeddings', type=int)
     parser.add_argument('--n_classes', default=2, help='number of classes for pretraining', type=int)
-    parser.add_argument('--use_softmax', default=False, help='wether softmax was used for pretraining', type=bool)
     parser.add_argument('--seed', default=None, help='seed', type=int)
     parser.add_argument('--number_to_pick', help='number of low and high loss data to pick from each', type=int)
     parser.add_argument('--C', help='C regularization', type=float)
@@ -89,7 +88,7 @@ def calaculate_loss_and_prediction(args, embeddings, y, model):
     cirterion = get_criterion(args)
     classiffication_fun = get_classification_func(args)
     y_torch = torch.from_numpy(y)
-    y_torch = y_torch.long() if args.use_softmax else y_torch.float()
+    y_torch = y_torch.long()
     model.eval()
     losses = []
     preds = []

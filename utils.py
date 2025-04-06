@@ -301,14 +301,12 @@ def get_resnet18_weights(args):
 
 def new_fc(args, n_classes, model):
     in_features = model.fc.in_features
-    out_features = n_classes if args.use_softmax else 1
+    out_features = n_classes
     model.fc = nn.Linear(in_features=in_features, out_features=out_features)
     return model
 
 
 def get_model(args, n_classes, modify_fc=True):
-    if n_classes > 2 and (not args.use_softmax):
-        raise Exception('Cannot use sigomid when n_classes > 2')
     if args.continue_from_chechpoint and args.model == 'ResNet50':
         model = resnet50(weights=None)
         model = new_fc(args, n_classes, model)
@@ -342,18 +340,12 @@ def get_optimizer(args, params):
 
 
 def get_criterion(args):
-    if args.use_softmax:
-        criterion = nn.CrossEntropyLoss()
-    else:
-        criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.CrossEntropyLoss()
     return criterion
 
 
 def get_classification_func(args, sigmoid_threshold=0.5):
-    if args.use_softmax:
-        return lambda x: torch.argmax(F.softmax(x, dim=1), dim=1)
-    else:
-        return lambda x: F.sigmoid(x.squeeze()) >= sigmoid_threshold
+    return lambda x: torch.argmax(F.softmax(x, dim=1), dim=1)
 
 
 def print_weigth_match(loaded_state_dict, model):
