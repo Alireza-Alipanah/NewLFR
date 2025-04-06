@@ -12,9 +12,6 @@ def get_sweep_conf():
             'embeddings_dir': {
                 'value': '/kaggle/input/wild-violet-60-embeddings/wild-violet-60.csv'
             },
-            'use_softmax': {
-                'value': True
-            },
             'model_path': {
                 'value': '/kaggle/input/resnet50-waterbirds-wild-violet-60/NewLFR/saved_models/resnet50_waterbirds_wild-violet-60.pth',
             },

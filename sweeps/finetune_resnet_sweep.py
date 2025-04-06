@@ -9,9 +9,6 @@ def get_sweep_conf():
         'program': 'finetune_resnet.py',
         'description': '',
         'parameters': {
-            'use_softmax': {
-                'value': True
-            },
             'seed': {
                 'values': [1, 2, 3]
             },
