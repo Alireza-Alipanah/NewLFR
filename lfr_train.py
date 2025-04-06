@@ -85,7 +85,7 @@ def get_datasets(args):
 
 
 def calaculate_loss_and_prediction(args, embeddings, y, model):
-    cirterion = get_criterion(args)
+    cirterion = get_criterion()
     classiffication_fun = get_classification_func(args)
     y_torch = torch.from_numpy(y)
     y_torch = y_torch.long()

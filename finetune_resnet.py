@@ -72,6 +72,10 @@ def get_args():
     parser.add_argument('--runner_optimal_direction_tol', default=1e-6, help='tolerance used in calculating optimal direction. only for OptimalDirectionRunner.', type=float)
     parser.add_argument('--runner_optimal_direction_max_iter', default=10, help='max iterations used in calculating optimal direction. only for OptimalDirectionRunner.', type=int)
 
+    # implicit regularization calculation
+    parser.add_argument('--implicit_regularization', default=False, help='whether to calculate implicit regularization that happens with batching', type=bool)
+    parser.add_argument('--implicit_regularization_every', default=1, help='specifizes calculting implicit regularization every i steps', type=int)
+
     args = parser.parse_args()
     return args
 
@@ -102,7 +106,7 @@ def get_runner_arguments(args):
     model = get_model(args, train_dataloader.dataset.n_classes)
     model = model.cuda()
     optimizer = get_optimizer(args, model.parameters())
-    criterion = get_criterion(args)
+    criterion = get_criterion()
     classification_func = get_classification_func(args)
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
     logger = Logger(args=args, tracked_metrics=args.tracked_metrics, path=args.save_path, save_name=args.save_name)
@@ -117,23 +121,20 @@ def get_runner_arguments(args):
         'classification_func': classification_func,
         'group_proportions': group_proportions,
         'logger': logger,
-        'oprimal_direction_lr': args.runner_oprimal_direction_lr,
-        'optimal_direction_tol': args.runner_optimal_direction_tol,
-        'optimal_direction_max_iter': args.runner_optimal_direction_max_iter
+        **vars(args)
     }
     return runner_arguments
 
 
 
-def get_runner(args, runner_arguments):
+def get_runner_class(args):
     if args.runner == 'DefaultRunner':
         runner_class = DefaultRunner
     elif args.runner == 'OptimalDirectionRunner':
         runner_class = OptimalDirectionRunner
     else:
         raise NotImplementedError()
-    runner = runner_class(**runner_arguments)
-    return runner
+    return runner_class
     
 
 
@@ -146,7 +147,8 @@ if __name__ == '__main__':
     )
 
     runner_arguments = get_runner_arguments(args)
-    runner = get_runner(args, runner_arguments)
+    runner_class = get_runner_class(args)
+    runner = runner_class(**runner_arguments)
     runner.test_initial_model()
     runner.train()
     runner.finish()

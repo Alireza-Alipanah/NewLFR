@@ -1,41 +1,27 @@
 import torch
+import torch.nn.functional as F
 from tqdm import tqdm
 import wandb
 
 from utils import (
     calculate_group_accuracies,
     log_to_wandb,
-    convert_to_wandb_format
+    convert_to_wandb_format,
+    get_criterion
 )
 
 
-class DefaultRunner:
-    def __init__(
-            self,
-            args,
-            train_dataloader,
-            val_dataloader,
-            test_dataloader,
-            model,
-            optimizer,
-            criterion,
-            classification_func,
-            group_proportions,
-            logger,
-            **kwargs, # NOT USED, ONLY ADDED FOR EASE OF USE
-        ):
-        self.args = args
-        self.train_dataloader = train_dataloader
-        self.val_dataloader = val_dataloader
-        self.test_dataloader = test_dataloader
-        self.model = model
-        self.optimizer = optimizer
-        self.criterion = criterion
-        self.classification_func = classification_func
-        self.group_proportions = group_proportions
-        self.logger = logger
+class Config:
+    def __init__(self, params):
+        for key, value in params.items():
+            setattr(self, key, value)
+        self.implicit_regularization_every_counter = 0
 
-    
+
+class DefaultRunner(Config):
+    def __init__(self, **kwargs):
+        super().__init__(params=kwargs)
+
     def evaluate(
             self,
             dataloader,
@@ -101,22 +87,77 @@ class DefaultRunner:
         return loss_value
     
 
+    def get_gradients_vector(self):
+        """
+            returns a flattened tensor of model gradient values
+        """
+        grad_list = []
+        for param in self.model.parameters():
+            if param.grad is not None:
+                flat_grad = param.grad.flatten()
+                grad_list.append(flat_grad)
+        return torch.cat(grad_list)
+    
+
     def calculate_implicit_regularization(self):
+        """
+        cacluated according to the paper:
+            ON THE ORIGIN OF IMPLICIT REGULARIZATION IN STOCHASTIC GRADIENT DESCENT
+        """
         self.model.eval()
+        criterion = get_criterion(reduction='sum')
+        # calculate accumulated gradient on all of data
+        for img, batch_y, _, _ in self.val_dataloader:
+            img = img.cuda()
+            batch_outputs = self.model(img).squeeze().cpu()
+            outputs = torch.concat((outputs, batch_outputs))
+            loss = criterion(outputs, batch_y.long())
+            loss.backward()
+        full_batch_grad = self.get_gradients_vector()
+
+        running_loss = 0
+        implicit_regularization_values = []
+
+        # calculate gradient on each batch
+        for img, batch_y, _, _ in self.val_dataloader:
+            img = img.cuda()
+            batch_outputs = self.model(img).squeeze().cpu()
+            outputs = torch.concat((outputs, batch_outputs))
+            loss = criterion(outputs, batch_y.long())
+            loss.backward()
+            running_loss += loss.item()
+            batch_grad = self.get_gradients_vector()
+            implicit_regularization_values.append(
+                torch.sum((full_batch_grad - batch_grad).pow(2))
+            )
+
+        return torch.mean(implicit_regularization_values), running_loss / len(self.val_dataloader)
+    
+
+    def calculate_and_log_step_metrics(self, train_loss_value):
+        step_log_data = {'train/step_loss': train_loss_value,}
+        if self.implicit_regularization:
+            implicit_regularization_every_counter += 1
+            if self.implicit_regularization_every_counter == self.implicit_regularization_every:
+                self.implicit_regularization_every_counter = 0
+                validation_step_implicit_regularization, validation_step_loss = self.calculate_implicit_regularization()
+                step_log_data['train/step_validation_implicit_regularization'] = validation_step_implicit_regularization
+                step_log_data['train/step_validation_loss'] = validation_step_loss
+        wandb.log(step_log_data)
 
     
     def train(self):
         for epoch in tqdm(range(self.args.epochs)):
-            self.model.train()
             train_running_loss = 0
             for img, y, _, _ in self.train_dataloader:
+                self.model.train() 
                 y = y.long() if self.args.use_softmax else y.float()
                 img, y = img.cuda(), y.cuda()
                 self.optimizer.zero_grad()
                 loss_value = self.updae_gradient(img, y)
                 self.optimizer.step()
                 train_running_loss += loss_value
-                wandb.log({'train/step_loss': loss_value})
+                self.calculate_and_log_step_metrics(train_loss_value=loss_value)
             self.evaluate_epoch(train_running_loss, epoch)
 
     
@@ -127,42 +168,7 @@ class DefaultRunner:
 
 
 
-class OptimalDirectionRunner(DefaultRunner):
-    def __init__(
-            self,
-            args,
-            train_dataloader,
-            val_dataloader,
-            test_dataloader,
-            model,
-            optimizer,
-            criterion,
-            classification_func,
-            group_proportions,
-            logger,
-            oprimal_direction_lr,
-            optimal_direction_tol,
-            optimal_direction_max_iter,
-            **kwargs
-        ):
-        super().__init__(
-            args=args,
-            train_dataloader=train_dataloader,
-            val_dataloader=val_dataloader,
-            test_dataloader=test_dataloader,
-            model=model,
-            optimizer=optimizer,
-            criterion=criterion,
-            classification_func=classification_func,
-            group_proportions=group_proportions,
-            logger=logger,
-            **kwargs
-        )
-        self.oprimal_direction_lr = oprimal_direction_lr
-        self.optimal_direction_tol = optimal_direction_tol
-        self.optimal_direction_max_iter = optimal_direction_max_iter
-
-    
+class OptimalDirectionRunner(DefaultRunner):    
     def calculate_optimal_direction(self, vectors):
         """
         Finds a unit vector v that:

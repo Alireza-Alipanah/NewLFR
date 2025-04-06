@@ -339,8 +339,11 @@ def get_optimizer(args, params):
     return optimizer
 
 
-def get_criterion(args):
-    criterion = nn.CrossEntropyLoss()
+def get_criterion(reduction=None):
+    if reduction is None:
+        criterion = nn.CrossEntropyLoss()
+    else:
+        criterion = nn.CrossEntropyLoss(reduction=reduction)
     return criterion
 
 
