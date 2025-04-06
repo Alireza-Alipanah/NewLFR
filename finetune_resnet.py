@@ -111,6 +111,7 @@ def get_runner_arguments(args):
     group_proportions = get_train_group_proportions(train_dataloader.dataset.group_array)
     logger = Logger(args=args, tracked_metrics=args.tracked_metrics, path=args.save_path, save_name=args.save_name)
     runner_arguments = {
+        **vars(args),
         'args': args,
         'train_dataloader': train_dataloader,
         'val_dataloader': val_dataloader,
@@ -121,7 +122,6 @@ def get_runner_arguments(args):
         'classification_func': classification_func,
         'group_proportions': group_proportions,
         'logger': logger,
-        **vars(args)
     }
     return runner_arguments
 
