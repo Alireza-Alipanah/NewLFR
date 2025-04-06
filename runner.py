@@ -129,7 +129,7 @@ class DefaultRunner(Config):
                 torch.sum((full_batch_grad - batch_grad).pow(2))
             )
 
-        return torch.mean(implicit_regularization_values), running_loss / len(self.val_dataloader)
+        return torch.mean(torch.Tensor(implicit_regularization_values)), running_loss / len(self.val_dataloader)
     
 
     def calculate_and_log_step_metrics(self, train_loss_value):
