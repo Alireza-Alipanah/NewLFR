@@ -16,6 +16,7 @@ class Config:
         for key, value in params.items():
             setattr(self, key, value)
         self.implicit_regularization_every_counter = 0
+        self.implicit_regularization_criterion = get_criterion(reduction='sum')
 
 
 class DefaultRunner(Config):
@@ -105,12 +106,11 @@ class DefaultRunner(Config):
             ON THE ORIGIN OF IMPLICIT REGULARIZATION IN STOCHASTIC GRADIENT DESCENT
         """
         self.model.eval()
-        criterion = get_criterion(reduction='sum')
         # calculate accumulated gradient on all of data
         for img, batch_y, _, _ in self.val_dataloader:
             img = img.cuda()
             batch_outputs = self.model(img).squeeze()
-            loss = criterion(batch_outputs.cuda(), batch_y.long().cuda())
+            loss = self.implicit_regularization_criterion(batch_outputs.cuda(), batch_y.long().cuda())
             loss.backward()
         full_batch_grad = self.get_gradients_vector()
 
@@ -121,7 +121,7 @@ class DefaultRunner(Config):
         for img, batch_y, _, _ in self.val_dataloader:
             img = img.cuda()
             batch_outputs = self.model(img).squeeze()
-            loss = criterion(batch_outputs.cuda(), batch_y.long().cuda())
+            loss = self.implicit_regularization_criterion(batch_outputs.cuda(), batch_y.long().cuda())
             loss.backward()
             running_loss += loss.item()
             batch_grad = self.get_gradients_vector()
