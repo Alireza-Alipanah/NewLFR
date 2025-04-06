@@ -109,9 +109,8 @@ class DefaultRunner(Config):
         # calculate accumulated gradient on all of data
         for img, batch_y, _, _ in self.val_dataloader:
             img = img.cuda()
-            batch_outputs = self.model(img).squeeze().cpu()
-            outputs = torch.concat((outputs, batch_outputs))
-            loss = criterion(outputs, batch_y.long())
+            batch_outputs = self.model(img).squeeze()
+            loss = criterion(batch_outputs.cuda(), batch_y.long().cuda())
             loss.backward()
         full_batch_grad = self.get_gradients_vector()
 
@@ -121,9 +120,8 @@ class DefaultRunner(Config):
         # calculate gradient on each batch
         for img, batch_y, _, _ in self.val_dataloader:
             img = img.cuda()
-            batch_outputs = self.model(img).squeeze().cpu()
-            outputs = torch.concat((outputs, batch_outputs))
-            loss = criterion(outputs, batch_y.long())
+            batch_outputs = self.model(img).squeeze()
+            loss = criterion(batch_outputs.cuda(), batch_y.long().cuda())
             loss.backward()
             running_loss += loss.item()
             batch_grad = self.get_gradients_vector()
