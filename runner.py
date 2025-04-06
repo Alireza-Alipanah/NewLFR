@@ -151,7 +151,7 @@ class DefaultRunner(Config):
             train_running_loss = 0
             for img, y, _, _ in self.train_dataloader:
                 self.model.train() 
-                y = y.long() if self.args.use_softmax else y.float()
+                y = y.long()
                 img, y = img.cuda(), y.cuda()
                 self.optimizer.zero_grad()
                 loss_value = self.updae_gradient(img, y)
