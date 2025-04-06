@@ -137,7 +137,7 @@ class DefaultRunner(Config):
     def calculate_and_log_step_metrics(self, train_loss_value):
         step_log_data = {'train/step_loss': train_loss_value,}
         if self.implicit_regularization:
-            implicit_regularization_every_counter += 1
+            self.implicit_regularization_every_counter += 1
             if self.implicit_regularization_every_counter == self.implicit_regularization_every:
                 self.implicit_regularization_every_counter = 0
                 validation_step_implicit_regularization, validation_step_loss = self.calculate_implicit_regularization()
