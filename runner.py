@@ -121,6 +121,7 @@ class DefaultRunner(Config):
         for img, batch_y, _, _ in self.val_dataloader:
             img = img.cuda()
             batch_outputs = self.model(img).squeeze()
+            self.optimizer.zero_grad()
             loss = self.implicit_regularization_criterion(batch_outputs.cuda(), batch_y.long().cuda())
             loss.backward()
             running_loss += loss.item()
