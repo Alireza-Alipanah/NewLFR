@@ -88,7 +88,7 @@ class DefaultRunner(Config):
         return loss_value
     
 
-    def get_gradients_vector(self):
+    def get_gradients_vector(self, size):
         """
             returns a flattened tensor of model gradient values
         """
@@ -97,7 +97,7 @@ class DefaultRunner(Config):
             if param.grad is not None:
                 flat_grad = param.grad.flatten()
                 grad_list.append(flat_grad)
-        return torch.cat(grad_list)
+        return torch.cat(grad_list) / size
     
 
     def calculate_implicit_regularization(self):
@@ -112,7 +112,7 @@ class DefaultRunner(Config):
             batch_outputs = self.model(img).squeeze()
             loss = self.implicit_regularization_criterion(batch_outputs.cuda(), batch_y.long().cuda())
             loss.backward()
-        full_batch_grad = self.get_gradients_vector()
+        full_batch_grad = self.get_gradients_vector(len(self.val_dataloader.dataset))
 
         running_loss = 0
         implicit_regularization_values = []
@@ -125,10 +125,8 @@ class DefaultRunner(Config):
             loss = self.implicit_regularization_criterion(batch_outputs.cuda(), batch_y.long().cuda())
             loss.backward()
             running_loss += loss.item()
-            batch_grad = self.get_gradients_vector()
-            implicit_regularization_values.append(
-                torch.sum((full_batch_grad - batch_grad).pow(2))
-            )
+            batch_grad = self.get_gradients_vector(len(batch_y))
+            implicit_regularization_values.append(torch.sum((full_batch_grad - batch_grad).pow(2)))
 
         return torch.mean(torch.Tensor(implicit_regularization_values)), running_loss / len(self.val_dataloader)
     
