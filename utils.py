@@ -339,6 +339,18 @@ def load_dominos_cmnist_all_exps_data(
     G = torch.cat((group_0_G, group_1_G, group_2_G, group_3_G, group_4_G, group_5_G, group_6_G, group_7_G))
     dataset = TensorDataset(X, Y.long(), G.long())
     train_dataset, lastlayer_dataset, val_dataset, test_dataset = random_split(dataset, [0.25, 0.25, 0.25, 0.25], generator=torch.Generator().manual_seed(args.seed))
+    tr = train_dataset.indices
+    ll = lastlayer_dataset.indices
+    val = val_dataset.indices
+    te = test_dataset.indices
+    X_tr, Y_tr, G_tr = X[tr], Y[tr], G[tr]
+    X_ll, Y_ll, G_ll = X[ll], Y[ll], G[ll]
+    X_val, Y_val, G_val = X[val], Y[val], G[val]
+    X_te, Y_te, G_te = X[te], Y[te], G[te]
+    train_dataset = TensorDataset(X_tr, Y_tr.long(), G_tr.long())
+    lastlayer_dataset = TensorDataset(X_ll, Y_ll.long(), G_ll.long())
+    val_dataset = TensorDataset(X_val, Y_val.long(), G_val.long())
+    test_dataset = TensorDataset(X_te, Y_te.long(), G_te.long())
     print(len(train_dataset), len(lastlayer_dataset), len(val_dataset), len(test_dataset))
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     lastlayer_loader = DataLoader(lastlayer_dataset, batch_size=batch_size, shuffle=False)
