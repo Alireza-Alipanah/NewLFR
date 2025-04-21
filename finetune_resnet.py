@@ -9,6 +9,7 @@ from utils import (
     load_data,
     load_convex_combination_data,
     load_dsprite_data,
+    load_dominos_cmnist_all_exps_data,
     set_seed,
     get_model,
     get_optimizer,
@@ -52,7 +53,8 @@ def get_args():
         choices=[
             'NormalWaterbirds',
             'CifarMnistConvexCombination',
-            'DSprite'
+            'DSprite',
+            'Dominos_Cmnist_all_exps'
         ]
         )
 
@@ -76,6 +78,11 @@ def get_args():
     parser.add_argument('--implicit_regularization', default=False, help='whether to calculate implicit regularization that happens with batching', type=bool)
     parser.add_argument('--implicit_regularization_every', default=1, help='specifizes calculting implicit regularization every i steps', type=int)
 
+    # dominos_cmnist_all_exps
+    parser.add_argument('--dataset_total_count', default=40000, help='total count of data points in the dataset', type=int)
+    parser.add_argument('--color_correlation', default=0.95, help='correlation of color attribute', type=float)
+    parser.add_argument('--shape_correlation', default=0.75, help='correlation of shape attribute', type=float)
+
     args = parser.parse_args()
     return args
 
@@ -96,6 +103,15 @@ def adjust_for_experiment(args):
         load_data_func = partial(load_dsprite_data, args=args, basedir=args.base_dir, batch_size=args.batch_size,
                                   spurious_correlation_value=args.spurious_correlation_value / 100)
         args.save_path = os.path.join(args.save_path, 'DSprite', f'seed_{args.seed}', f'sc_{args.spurious_correlation_value}', f'batch_size_{args.batch_size}')
+    elif args.experiment == 'Dominos_Cmnist_all_exps':
+        load_data_func = partial(load_dominos_cmnist_all_exps_data, args=args, basedir=args.base_dir, batch_size=args.batch_size)
+        args.save_path = os.path.join(args.save_path,
+                                       'Dominos_Cmnist_all_exps',
+                                        f'seed_{args.seed}',
+                                        f'dataset_total_count_{args.dataset_total_count_}',
+                                        f'color_correlation_{args.color_correlation}',
+                                        f'shape_correlation_{args.shape_correlation}', 
+                                        f'batch_size_{args.batch_size}')
     args.save_name = f'{args.save_name}_{run_name}'
     return load_data_func
 

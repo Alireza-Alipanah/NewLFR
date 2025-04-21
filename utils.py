@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import wandb
 import torch
+from torch.utils.data import TensorDataset, DataLoader, random_split
+import torchvision
 from torchvision.models import resnet50, ResNet50_Weights, resnet18, ResNet18_Weights
 from torch.optim import SGD
 import torch.nn.functional as F
@@ -202,6 +204,146 @@ def load_dsprite_data(
         shuffle=False)
     return train_loader, val_loader, test_loader
 
+
+def color_grayscale_arr(arr, red=True):
+  """Converts grayscale image to either red or green"""
+  assert arr.ndim == 2
+  dtype = arr.dtype
+  h, w = arr.shape
+  arr = np.reshape(arr, [1, h, w])
+  if red:
+    arr = np.concatenate([arr,
+                          np.zeros((2, h, w), dtype=dtype)], axis=0)
+  else:
+    arr = np.concatenate([np.zeros((1, h, w), dtype=dtype),
+                          arr,
+                          np.zeros((1, h, w), dtype=dtype)], axis=0)
+  return arr
+
+
+def keep_only_lbls(dataset, lbls):
+  lbls = {lbl: i for i, lbl in enumerate(lbls)}
+  final_X, final_Y = [], []
+  for x, y in dataset:
+    if y in lbls:
+      final_X.append(x)
+      final_Y.append(lbls[y])
+  X = torch.stack(final_X)
+  Y = torch.tensor(final_Y).float().view(-1,1)
+  return X, Y
+
+
+def load_dominos_cmnist_all_exps_data(
+        args,
+        batch_size
+):
+    c1_m_red = c2_fm_green = np.ceil(args.dataset_total_count * args.color_correlation * args.shape_correlation * 0.5)
+    c1_m_green = c2_fm_red = int(args.dataset_total_count * args.shape_correlation * (1 - args.color_correlation ) * 0.5)
+    c1_fm_red = c2_m_green = np.ceil(args.dataset_total_count * args.color_correlation  * (1 - args.shape_correlation) * 0.5)
+    c1_fm_green = c2_m_red = int(args.dataset_total_count * (1 - args.color_correlation ) * (1 - args.shape_correlation) * 0.5)
+    print(c1_m_red, c1_m_green, c1_fm_red, c1_fm_green, c2_m_red, c2_m_green, c2_fm_red, c2_fm_green, sep='\n')
+    mnist_transform = torchvision.transforms.Compose([
+          torchvision.transforms.ToTensor(), 
+          torchvision.transforms.Normalize(mean=0.485,
+                                           std=0.229),
+        ])
+    mnist_train = torchvision.datasets.MNIST('./data/mnist/', train=True, download=True, transform=mnist_transform)
+    X_mnist, _ = keep_only_lbls(mnist_train, lbls=[0, 1, 2, 3])
+    fmnist_train = torchvision.datasets.FashionMNIST('./data/fashion_mnist/', train=True, download=True, transform=mnist_transform)
+    X_fmnist, _ = keep_only_lbls(fmnist_train, lbls=[0, 3, 4, 6])
+    red_mnist, red_fmnist, green_mnist, green_fmnist = [], [], [], []
+    for idx, img in enumerate(X_mnist):
+        img = color_grayscale_arr(img.squeeze().numpy(), red=True)
+        img = np.pad(img, ((0, 0), (2, 2), (2, 2)), constant_values=0)
+        red_mnist.append(torch.tensor(img))
+    red_mnist = torch.stack(red_mnist)
+    for idx, img in enumerate(X_mnist):
+        img = color_grayscale_arr(img.squeeze().numpy(), red=False)
+        img = np.pad(img, ((0, 0), (2, 2), (2, 2)), constant_values=0)
+        green_mnist.append(torch.tensor(img))
+    green_mnist = torch.stack(green_mnist)
+
+    for idx, img in enumerate(X_fmnist):
+        img = color_grayscale_arr(img.squeeze().numpy(), red=True)
+        img = np.pad(img, ((0, 0), (2, 2), (2, 2)), constant_values=0)
+        red_fmnist.append(torch.tensor(img))
+    red_fmnist = torch.stack(red_fmnist)
+    for idx, img in enumerate(X_fmnist):
+        img = color_grayscale_arr(img.squeeze().numpy(), red=False)
+        img = np.pad(img, ((0, 0), (2, 2), (2, 2)), constant_values=0)
+        green_fmnist.append(torch.tensor(img))
+    green_fmnist = torch.stack(green_fmnist)
+    idx = torch.randperm(red_mnist.shape[0])
+    red_mnist_0_idx = idx[:c1_m_red]
+    red_mnist_4_idx = idx[c1_m_red:c1_m_red+c2_m_red]
+    red_mnist_0 = red_mnist[red_mnist_0_idx]
+    red_mnist_4 = red_mnist[red_mnist_4_idx]
+    idx = torch.randperm(green_mnist.shape[0])
+    green_mnist_1_idx = idx[:c1_m_green]
+    green_mnist_5_idx = idx[c1_m_green:c1_m_green+c2_m_green]
+    green_mnist_1 = green_mnist[green_mnist_1_idx]
+    green_mnist_5 = green_mnist[green_mnist_5_idx]
+    idx = torch.randperm(red_fmnist.shape[0])
+    red_fmnist_2_idx = idx[:c1_fm_red]
+    red_fmnist_6_idx = idx[c1_fm_red:c1_fm_red+c2_fm_red]
+    red_fmnist_2 = red_fmnist[red_fmnist_2_idx]
+    red_fmnist_6 = red_fmnist[red_fmnist_6_idx]
+    idx = torch.randperm(green_fmnist.shape[0])
+    green_fmnist_3_idx = idx[:c1_fm_green]
+    green_fmnist_7_idx = idx[c1_fm_green:c1_fm_green+c2_fm_green]
+    green_fmnist_3 = green_fmnist[green_fmnist_3_idx]
+    green_fmnist_7 = green_fmnist[green_fmnist_7_idx]
+    cifar_transform = torchvision.transforms.Compose([
+          torchvision.transforms.ToTensor(), 
+          torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                           std=[0.229, 0.224, 0.225]),
+        ])
+    cifar_train = torchvision.datasets.CIFAR10('./data/cifar10/', train=True, download=True, transform=cifar_transform)
+    X_c_cars, _ = keep_only_lbls(cifar_train, lbls=[0, 1, 8, 9])
+    X_c_animals, _ = keep_only_lbls(cifar_train, lbls=[3, 4, 5, 7])
+    X_c_cars_0 = X_c_cars[:c1_m_red]
+    X_c_cars_1 = X_c_cars[c1_m_red:c1_m_red+c1_m_green]
+    X_c_cars_2 = X_c_cars[c1_m_red+c1_m_green:c1_m_red+c1_m_green+c1_fm_red]
+    X_c_cars_3 = X_c_cars[c1_m_red+c1_m_green+c1_fm_red:]
+    X_c_animals_7 = X_c_animals[:c2_fm_green]
+    X_c_animals_6 = X_c_animals[c2_fm_green:c2_fm_green+c2_fm_red]
+    X_c_animals_5 = X_c_animals[c2_fm_green+c2_fm_red:c2_fm_green+c2_fm_red+c2_m_green]
+    X_c_animals_4 = X_c_animals[c2_fm_green+c2_fm_red+c2_m_green:]
+    group_0_X = torch.cat((X_c_cars_0, red_mnist_0), dim=2)
+    group_0_Y = torch.zeros(len(group_0_X))
+    group_0_G = torch.tensor([0] * len(group_0_X))
+    group_1_X = torch.cat((X_c_cars_1, green_mnist_1), dim=2)
+    group_1_Y = torch.zeros(len(group_1_X))
+    group_1_G = torch.tensor([1] * len(group_1_X))
+    group_2_X = torch.cat((X_c_cars_2, red_fmnist_2), dim=2)
+    group_2_Y = torch.zeros(len(group_2_X))
+    group_2_G = torch.tensor([2] * len(group_2_X))
+    group_3_X = torch.cat((X_c_cars_3, green_fmnist_3), dim=2)
+    group_3_Y = torch.zeros(len(group_3_X))
+    group_3_G = torch.tensor([3] * len(group_3_X))
+    group_4_X = torch.cat((X_c_animals_4, red_mnist_4), dim=2)
+    group_4_Y = torch.ones(len(group_4_X))
+    group_4_G = torch.tensor([4] * len(group_4_X))
+    group_5_X = torch.cat((X_c_animals_5, green_mnist_5), dim=2)
+    group_5_Y = torch.ones(len(group_5_X))
+    group_5_G = torch.tensor([5] * len(group_5_X))
+    group_6_X = torch.cat((X_c_animals_6, red_fmnist_6), dim=2)
+    group_6_Y = torch.ones(len(group_6_X))
+    group_6_G = torch.tensor([6] * len(group_6_X))
+    group_7_X = torch.cat((X_c_animals_7, green_fmnist_7), dim=2)
+    group_7_Y = torch.ones(len(group_7_X))
+    group_7_G = torch.tensor([7] * len(group_7_X))
+    X = torch.cat((group_0_X, group_1_X, group_2_X, group_3_X, group_4_X, group_5_X, group_6_X, group_7_X))
+    Y = torch.cat((group_0_Y, group_1_Y, group_2_Y, group_3_Y, group_4_Y, group_5_Y, group_6_Y, group_7_Y))
+    G = torch.cat((group_0_G, group_1_G, group_2_G, group_3_G, group_4_G, group_5_G, group_6_G, group_7_G))
+    dataset = TensorDataset(X, Y.long(), G.long())
+    train_dataset, lastlayer_dataset, val_dataset, test_dataset = random_split(dataset, [0.25, 0.25, 0.25, 0.25], generator=torch.Generator().manual_seed(args.seed))
+    print(len(train_dataset), len(lastlayer_dataset), len(val_dataset), len(test_dataset))
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    lastlayer_loader = DataLoader(lastlayer_dataset, batch_size=batch_size, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    return train_loader, val_loader, test_loader
 
 
 def log_to_wandb(data_dict, epoch=None):
