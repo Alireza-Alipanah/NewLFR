@@ -25,6 +25,7 @@ def set_seed(args):
     np.random.seed(seed)
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 def get_transforms(target_resolution, augment_train, validation_for_train):
