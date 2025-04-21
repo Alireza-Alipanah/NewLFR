@@ -351,6 +351,10 @@ def load_dominos_cmnist_all_exps_data(
     lastlayer_dataset = TensorDataset(X_ll, Y_ll.long(), G_ll.long())
     val_dataset = TensorDataset(X_val, Y_val.long(), G_val.long())
     test_dataset = TensorDataset(X_te, Y_te.long(), G_te.long())
+    train_dataset.nclasses = len(np.unique(Y_tr))
+    lastlayer_dataset.nclasses = train_dataset.nclasses
+    val_dataset.nclasses = train_dataset.nclasses
+    test_dataset.nclasses = train_dataset.nclasses
     print(len(train_dataset), len(lastlayer_dataset), len(val_dataset), len(test_dataset))
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     lastlayer_loader = DataLoader(lastlayer_dataset, batch_size=batch_size, shuffle=False)
