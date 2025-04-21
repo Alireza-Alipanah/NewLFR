@@ -108,7 +108,7 @@ def adjust_for_experiment(args):
         args.save_path = os.path.join(args.save_path,
                                        'Dominos_Cmnist_all_exps',
                                         f'seed_{args.seed}',
-                                        f'dataset_total_count_{args.dataset_total_count_}',
+                                        f'dataset_total_count_{args.dataset_total_count}',
                                         f'color_correlation_{args.color_correlation}',
                                         f'shape_correlation_{args.shape_correlation}', 
                                         f'batch_size_{args.batch_size}')
