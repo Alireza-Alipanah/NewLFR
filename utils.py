@@ -355,6 +355,10 @@ def load_dominos_cmnist_all_exps_data(
     lastlayer_dataset.n_classes = train_dataset.n_classes
     val_dataset.n_classes = train_dataset.n_classes
     test_dataset.n_classes = train_dataset.n_classes
+    train_dataset.group_array = G_tr
+    lastlayer_dataset.group_array = G_ll
+    val_dataset.group_array = G_val
+    test_dataset.group_array = G_te
     print(len(train_dataset), len(lastlayer_dataset), len(val_dataset), len(test_dataset))
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     lastlayer_loader = DataLoader(lastlayer_dataset, batch_size=batch_size, shuffle=False)
