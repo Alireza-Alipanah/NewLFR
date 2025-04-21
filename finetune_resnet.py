@@ -104,7 +104,7 @@ def adjust_for_experiment(args):
                                   spurious_correlation_value=args.spurious_correlation_value / 100)
         args.save_path = os.path.join(args.save_path, 'DSprite', f'seed_{args.seed}', f'sc_{args.spurious_correlation_value}', f'batch_size_{args.batch_size}')
     elif args.experiment == 'Dominos_Cmnist_all_exps':
-        load_data_func = partial(load_dominos_cmnist_all_exps_data, args=args, basedir=args.base_dir, batch_size=args.batch_size)
+        load_data_func = partial(load_dominos_cmnist_all_exps_data, args=args, batch_size=args.batch_size)
         args.save_path = os.path.join(args.save_path,
                                        'Dominos_Cmnist_all_exps',
                                         f'seed_{args.seed}',
