@@ -238,9 +238,9 @@ def load_dominos_cmnist_all_exps_data(
         args,
         batch_size
 ):
-    c1_m_red = c2_fm_green = np.ceil(args.dataset_total_count * args.color_correlation * args.shape_correlation * 0.5)
+    c1_m_red = c2_fm_green = int(np.ceil(args.dataset_total_count * args.color_correlation * args.shape_correlation * 0.5))
     c1_m_green = c2_fm_red = int(args.dataset_total_count * args.shape_correlation * (1 - args.color_correlation ) * 0.5)
-    c1_fm_red = c2_m_green = np.ceil(args.dataset_total_count * args.color_correlation  * (1 - args.shape_correlation) * 0.5)
+    c1_fm_red = c2_m_green = int(np.ceil(args.dataset_total_count * args.color_correlation  * (1 - args.shape_correlation) * 0.5))
     c1_fm_green = c2_m_red = int(args.dataset_total_count * (1 - args.color_correlation ) * (1 - args.shape_correlation) * 0.5)
     print(c1_m_red, c1_m_green, c1_fm_red, c1_fm_green, c2_m_red, c2_m_green, c2_fm_red, c2_fm_green, sep='\n')
     mnist_transform = torchvision.transforms.Compose([
