@@ -33,7 +33,7 @@ class DefaultRunner(Config):
         outputs = torch.rand((0))
         groups = torch.rand((0))
         with torch.no_grad():
-            for img, batch_y, g, _ in dataloader:
+            for img, batch_y, g in dataloader:
                 img = img.cuda()
                 batch_outputs = self.model(img).squeeze().cpu()
                 outputs = torch.concat((outputs, batch_outputs))
@@ -146,7 +146,7 @@ class DefaultRunner(Config):
     def train(self):
         for epoch in tqdm(range(self.args.epochs)):
             train_running_loss = 0
-            for img, y, _, _ in self.train_dataloader:
+            for img, y, _ in self.train_dataloader:
                 self.model.train() 
                 y = y.long()
                 img, y = img.cuda(), y.cuda()

@@ -82,7 +82,8 @@ class WaterBirdsDataset(Dataset):
 
         if self.transform:
             img = self.transform(img)
-        return img, y, g, p
+        # return img, y, g, p
+        return img, y, g
 
 
 def get_transform_cub(target_resolution, train, augment_data):

@@ -46,7 +46,7 @@ class CifarMnistConvexCombinationDataset(Dataset):
         img = self.blended_images[idx]
         if self.transform:
             img = self.transform(img)
-        return img, y, g, 0
+        return img, y, g
     
 
 class DSprite(torch.utils.data.Dataset):
@@ -172,7 +172,7 @@ class DSpriteImageDataset(Dataset):
         return len(self.labels)
 
     def __getitem__(self, index):
-        return self.images[index], self.labels[index], self.groups[index], 0
+        return self.images[index], self.labels[index], self.groups[index]
     
 
 def build_dsprite_dataset(imgs, ys, gs, indexes):
