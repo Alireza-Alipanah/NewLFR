@@ -111,7 +111,14 @@ def get_transform_cub(target_resolution, train, augment_data):
     return transform
 
 
-def get_loader(data, train, reweight_groups, reweight_classes, reweight_places, **kwargs):
+def get_loader(data, train, reweight_groups, reweight_classes, reweight_places, spurious_correlation_value=None, **kwargs):
+    if spurious_correlation_value is not None:
+        return build_dataloader_with_correlation(
+            dataset=data,
+            correlation_num=spurious_correlation_value,
+            batch_size=kwargs['batch_size'],
+            shuffle=train,
+        )
     if not train: # Validation or testing
         assert reweight_groups is None
         assert reweight_classes is None

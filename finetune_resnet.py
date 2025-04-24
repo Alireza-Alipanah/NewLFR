@@ -6,10 +6,6 @@ import torch
 import wandb
 
 from utils import (
-    load_data,
-    load_convex_combination_data,
-    load_dsprite_data,
-    load_dominos_cmnist_all_exps_data,
     set_seed,
     get_model,
     get_optimizer,
@@ -22,6 +18,7 @@ from runner import (
     DefaultRunner,
     OptimalDirectionRunner
 )
+from experiment_configs import EXPERIMENT_CONFIGS
 
 if not torch.cuda.is_available():
     raise Exception('cuda not available')
@@ -43,7 +40,11 @@ def get_args():
     parser.add_argument('--save_path', default=os.path.join('/', 'kaggle', 'working', 'NewLFR', 'saved_models'), help='path to save the model', type=str)
     parser.add_argument('--save_name', default='resnet50_waterbirds', help='name of the saved model file without .pth extension', type=str)
     parser.add_argument('--seed', default=None, help='seed', type=int)
-    parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the dataset with, use None for default', type=int)
+    parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the train dataloader with, use None for default', type=int)
+    parser.add_argument('--spurious_correlation_value_validation', default=None, help='spurious correlation value to build the validation dataloader with' + \
+                        ', use None for default, does not apply to convex combination experiments', type=int)
+    parser.add_argument('--same_spurious_correlation_value_for_train_and_test', default=False, help='Whether to use the same spurious correlation value when' + \
+                        ' create train and validation datasets. Overrides spurious_correlation_value_validation argument. Does not apply to convex combination experiments.', type=float)
     parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1), ('worst_group_accuracy', 1)], help='list of metrics to track. ' + \
     ' each should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=lambda x: eval(x))
 
@@ -56,7 +57,7 @@ def get_args():
             'DSprite',
             'Dominos_Cmnist_all_exps'
         ]
-        )
+    )
 
     # convex combination experiments values
     parser.add_argument('--cc_alpha', default=0, help='alpha value for belding', type=float)
@@ -88,31 +89,23 @@ def get_args():
 
 
 def adjust_for_experiment(args):
-    # The goal of this function is to apply all experiment specific changes in one functions to facilitate future adjustments
-    run_name = wandb.run.name if wandb.run.name else wandb.run.id
-    if args.experiment == 'NormalWaterbirds':
-        load_data_func = partial(load_data, basedir=args.base_dir, batch_size=args.batch_size, spurious_correlation_value=args.spurious_correlation_value)
-        args.save_path = os.path.join(args.save_path, run_name)
-        print(f'saving logs at {args.save_path}')
-    elif args.experiment == 'CifarMnistConvexCombination':
-        mapping_csv_path = os.path.join(args.cc_mapping_basedir, f'{args.cc_correlation}_mapping.csv')
-        load_data_func = partial(load_convex_combination_data, mapping_csv_path=mapping_csv_path,
-         alpha=args.cc_alpha, correlation=args.cc_correlation, batch_size=args.batch_size)
-        args.save_path = os.path.join(args.save_path, f'alpha_{args.cc_alpha}', f'seed_{args.seed}', f'correlation_{int(float(args.cc_correlation) * 100)}')
-    elif args.experiment == 'DSprite':
-        load_data_func = partial(load_dsprite_data, args=args, basedir=args.base_dir, batch_size=args.batch_size,
-                                  spurious_correlation_value=args.spurious_correlation_value / 100)
-        args.save_path = os.path.join(args.save_path, 'DSprite', f'seed_{args.seed}', f'sc_{args.spurious_correlation_value}', f'batch_size_{args.batch_size}')
-    elif args.experiment == 'Dominos_Cmnist_all_exps':
-        load_data_func = partial(load_dominos_cmnist_all_exps_data, args=args, batch_size=args.batch_size)
-        args.save_path = os.path.join(args.save_path,
-                                       'Dominos_Cmnist_all_exps',
-                                        f'seed_{args.seed}',
-                                        f'dataset_total_count_{args.dataset_total_count}',
-                                        f'color_correlation_{args.color_correlation}',
-                                        f'shape_correlation_{args.shape_correlation}', 
-                                        f'batch_size_{args.batch_size}')
-    args.save_name = f'{args.save_name}_{run_name}'
+    """
+    Apply all experiment-specific changes: select the data loader, 
+    build save_path, and append run name to save_name.
+    """
+    run_id = wandb.run.name or wandb.run.id
+    if args.same_spurious_correlation_value_for_train_and_test:
+        args.spurious_correlation_value_validation = args.spurious_correlation_value
+    cfg = EXPERIMENT_CONFIGS.get(args.experiment)
+    if cfg is None:
+        raise ValueError(f"Unknown experiment: {args.experiment}")
+    loader_fn = cfg["loader"]
+    loader_params = cfg["loader_kwargs"](args)
+    load_data_func = partial(loader_fn, **loader_params)
+    subdirs = cfg["path_parts"](args)
+    args.save_path = os.path.join(args.save_path, *subdirs)
+    print(f"Saving logs at {args.save_path}")
+    args.save_name = f"{args.save_name}_{run_id}"
     return load_data_func
 
 

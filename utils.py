@@ -44,23 +44,17 @@ def get_loaders(
     test_dataset,
     shuffle_train,
     batch_size,
-    spurious_correlation_value=None
+    spurious_correlation_value=None,
+    spurious_correlation_value_validation=None
 ):
-    if spurious_correlation_value is None:
-        train_dataloader = get_loader(
-            data=train_dataset,
-            train=shuffle_train,
-            reweight_groups=None,
-            reweight_classes=None,
-            reweight_places=None,
-            batch_size=batch_size,
-            )
-    else:
-        train_dataloader = build_dataloader_with_correlation(
-            train_dataset,
-            spurious_correlation_value, 
-            batch_size,
-            shuffle=shuffle_train
+    train_dataloader = get_loader(
+        data=train_dataset,
+        train=shuffle_train,
+        reweight_groups=None,
+        reweight_classes=None,
+        reweight_places=None,
+        spurious_correlation_value=spurious_correlation_value,
+        batch_size=batch_size,
         )
     val_dataloader = get_loader(
         data=val_dataset,
@@ -68,6 +62,7 @@ def get_loaders(
         reweight_groups=None,
         reweight_classes=None,
         reweight_places=None,
+        spurious_correlation_value=spurious_correlation_value_validation,
         batch_size=batch_size,
         )
     test_dataloader = get_loader(
@@ -81,7 +76,7 @@ def get_loaders(
     return train_dataloader, val_dataloader, test_dataloader
 
 
-def load_data(
+def load_wb_data(
     basedir,
     batch_size,
     target_resolution=(224, 224),
@@ -162,6 +157,7 @@ def load_dsprite_data(
     batch_size,
     shuffle_train=True,
     spurious_correlation_value=None,
+    spurious_correlation_value_validation=None,
 ):
     ds = DSprite(basedir, 0.5, seed=args.seed)
     gs = []
@@ -191,7 +187,7 @@ def load_dsprite_data(
         imgs=imgs[val_dataset_indexes],
         ys=ys[val_dataset_indexes],
         gs=gs[val_dataset_indexes],
-        correlation_num=0.5,
+        correlation_num=spurious_correlation_value_validation,
         portion_num=1, #TODO portion ratio
         batch_size=batch_size,
         shuffle=False)
