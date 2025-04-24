@@ -43,7 +43,7 @@ def get_args():
     parser.add_argument('--spurious_correlation_value', default=None, help='spurious correlation value to build the train dataloader with, use None for default', type=int)
     parser.add_argument('--spurious_correlation_value_validation', default=None, help='spurious correlation value to build the validation dataloader with' + \
                         ', use None for default, does not apply to convex combination experiments', type=int)
-    parser.add_argument('--same_spurious_correlation_value_for_train_and_test', default=False, help='Whether to use the same spurious correlation value when' + \
+    parser.add_argument('--same_spurious_correlation_value_for_train_and_validation', default=False, help='Whether to use the same spurious correlation value when' + \
                         ' create train and validation datasets. Overrides spurious_correlation_value_validation argument. Does not apply to convex combination experiments.', type=float)
     parser.add_argument('--tracked_metrics', default=[('mean_accuracy', 1), ('worst_group_accuracy', 1)], help='list of metrics to track. ' + \
     ' each should be of the form (metric name, 1|-1) with 1 indiciation higher is better', type=lambda x: eval(x))
