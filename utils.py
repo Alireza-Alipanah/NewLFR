@@ -85,6 +85,7 @@ def load_wb_data(
     shuffle_train=True,
     alternative_format=False,
     spurious_correlation_value=None,
+    spurious_correlation_value_validation=None
 ):
 
     train_transform, val_transform, test_transform = get_transforms(target_resolution, augment_train, validation_for_train)
@@ -113,7 +114,8 @@ def load_wb_data(
         test_dataset,
         shuffle_train,
         batch_size,
-        spurious_correlation_value=spurious_correlation_value
+        spurious_correlation_value=spurious_correlation_value,
+        spurious_correlation_value_validation=spurious_correlation_value_validation
     )
 
 
