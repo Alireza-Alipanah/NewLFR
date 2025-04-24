@@ -94,7 +94,7 @@ def adjust_for_experiment(args):
     build save_path, and append run name to save_name.
     """
     run_id = wandb.run.name or wandb.run.id
-    if args.same_spurious_correlation_value_for_train_and_test:
+    if args.same_spurious_correlation_value_for_train_and_validation:
         args.spurious_correlation_value_validation = args.spurious_correlation_value
     cfg = EXPERIMENT_CONFIGS.get(args.experiment)
     if cfg is None:
