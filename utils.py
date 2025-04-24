@@ -387,14 +387,14 @@ def get_train_group_proportions(array):
     return proportions_dict
 
 
-def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict): # TODO: fix: this only works when there are four groups
-    maj_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])[-2:]
-    min_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])[:2]
-    maj_accuracy = np.mean([accuracy_score(pred[groups == group], y[groups == group]) for group in np.unique(list(zip(*maj_groups))[0])])
-    min_accuracy = np.mean([accuracy_score(pred[groups == group], y[groups == group]) for group in np.unique(list(zip(*min_groups))[0])])
-    maj_percent = sum(list(zip(*maj_groups))[1])
-    min_percent = sum(list(zip(*min_groups))[1])
-    return maj_percent * maj_accuracy + min_percent * min_accuracy
+# def calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict): # TODO: fix: this only works when there are four groups
+#     maj_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])[-2:]
+#     min_groups = sorted(list(proportions_dict.items()), key=lambda x: x[1])[:2]
+#     maj_accuracy = np.mean([accuracy_score(pred[groups == group], y[groups == group]) for group in np.unique(list(zip(*maj_groups))[0])])
+#     min_accuracy = np.mean([accuracy_score(pred[groups == group], y[groups == group]) for group in np.unique(list(zip(*min_groups))[0])])
+#     maj_percent = sum(list(zip(*maj_groups))[1])
+#     min_percent = sum(list(zip(*min_groups))[1])
+#     return maj_percent * maj_accuracy + min_percent * min_accuracy
 
 
 def calculate_group_accuracies(pred, y, groups, proportions_dict):
@@ -411,7 +411,7 @@ def calculate_group_accuracies(pred, y, groups, proportions_dict):
     group_data['worst_group_accuracy'] = min(group_data.values())
     group_data['accuracy'] = accuracy_score(y, pred)
     group_data['mean_accuracy'] = mean_acc
-    group_data['our_mean_accuracy'] = calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict)
+    # group_data['our_mean_accuracy'] = calculate_our_mean_group_accuracy(pred, y, groups, proportions_dict)
     group_data['group_average_accuracy'] = np.mean(group_accuracies)
     return group_data
 
